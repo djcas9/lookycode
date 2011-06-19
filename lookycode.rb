@@ -1,3 +1,6 @@
+require 'sinatra/base'
+require 'json'
+
 require "#{File.dirname(__FILE__)}/lib/web"
 
 module LookyCode

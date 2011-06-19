@@ -1,0 +1,9 @@
+javascripts:
+  lookycode:
+    - public/javascripts/handlebars.js
+    - public/javascripts/jquery.js
+    - public/javascripts/highcharts.js
+    - public/javascripts/lookycode.js
+stylesheets:
+  lookycode:
+    - public/stylesheets/lookycode.css

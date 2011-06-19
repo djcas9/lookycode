@@ -1,9 +1,6 @@
-require 'sinatra'
-require 'json'
-
 module LookyCode
   class Web < Sinatra::Base
-    set :root, File.expand_path(File.join(File.dirname(__FILE__), '..', 'data'))
+    set :root, File.expand_path(File.join(File.dirname(__FILE__), '..'))
 
     get '/' do
       @username = 'mephux'
