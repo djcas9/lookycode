@@ -1,0 +1,43 @@
+<!DOCTYPE HTML>
+	<html lang="en-EN">
+	<head>
+		<meta charset="UTF-8">
+		<title>Lookycode <%= @username %></title>
+		<link rel="stylesheet" type="text/css" href="stylesheets/lookycode.css" media="all">
+		
+		<script type="text/javascript" src="javascripts/jquery.js"></script>
+		<script type="text/javascript" src="javascripts/handlebars.js"></script>
+		<script type="text/javascript" src="javascripts/lookycode.js"></script>
+	</head>
+	
+	<body>
+		<div id="wrapper">
+			<div id="header">
+				<div class="inside">
+					<div id="logo"><a href="/"></a></div>
+          <div id="search">
+            <form id='find-user'>
+              <input type="text" name="" id="user-search" placeholder='Enter Github Username...' autocomplete='off' />
+              <button class='default'><span>Search</span></button>
+            </form>
+          </div>  
+				</div>
+			</div>
+			
+			<div id="user"><div class="inside"><div id='user-loading'></div></div></div>
+			
+      <div id="page">
+        <div id="loading">Loading...</div>
+      </div>
+			
+		</div>
+		
+    <div id="footer">
+      <div class="inside">
+        http://lookycode.com &copy; <%= Time.now.year %> by Dustin Willis Webber using the Github API.
+      </div>
+    </div>
+		
+		<script type="text/javascript">$(function() { new GitHub('<%= @username %>') });</script>
+	</body>
+</html>
