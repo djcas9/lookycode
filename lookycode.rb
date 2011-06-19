@@ -1,11 +1,16 @@
-require 'rubygems'
-require 'sinatra/base'
+require 'sinatra'
 require 'json'
 
-require "#{File.dirname(__FILE__)}/lib/web"
+VERSION = '0.1.0'
 
-module LookyCode
-  VERSION = '0.1.0'
+set :root, File.expand_path(File.join(File.dirname(__FILE__)))
+
+get '/' do
+  @username = 'mephux'
+  erb :index
 end
 
-LookyCode::Web.run! :port => 3000
+get '/:user' do
+  @username = params[:user] || 'mephux'
+  erb :index
+end

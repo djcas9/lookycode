@@ -1,10 +1,2 @@
-require 'rubygems'
-require 'sinatra'
-
-Sinatra::Application.default_options.merge!(
-  :run => false,
-  :env => ENV['RACK_ENV']
-)
-
-require 'index'
-run Sinatra.application
+require 'lookycode'
+run Lookycode

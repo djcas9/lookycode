@@ -6,7 +6,7 @@ var Repo;
   $.fn.sorted = function(customOptions) {
     var options = {
       reversed: false,
-      by: function(a) { return a.text(); }
+      by: function(a) { return a.text();  }
     };
     $.extend(options, customOptions);
     $data = $(this);
