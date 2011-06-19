@@ -708,7 +708,7 @@ ul#repos{
 	display: block;
 	overflow: hidden;
 	padding: 0;
-	margin: 25px 0 0;
+	margin: 15px 0 0;
 }
 
 ul#repos li{
@@ -794,6 +794,14 @@ ul#repos li .inside .repo-title .repo-name{
 	display: block;
 	position: relative;
 	overflow: hidden;
+}
+
+ul#repos li .inside .repo-title a{
+	color: #c8c8c8;
+	font-variant: normal;
+	text-decoration: none;
+	font-weight: normal;
+	font-style: normal;
 }
 
 ul#repos li .inside .repo-title .repo-size{
@@ -889,6 +897,20 @@ ul#repos li .inside div.repo-footer div.repo-box{
 	font-size: 0.755em;
 	padding-top: 2px;
 	padding-bottom: 3px;
+}
+
+ul#repos li .inside div.repo-footer div.repo-box a{
+	color: #7c7c7c;
+	font-weight: normal;
+	font-style: normal;
+	text-decoration: none;
+	font-variant: normal;
+	position: absolute;
+	display: block;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
 }
 
 ul#repos li .inside div.repo-footer div.repo-box:hover{
