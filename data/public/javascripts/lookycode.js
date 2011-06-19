@@ -42,6 +42,18 @@ Handlebars.registerHelper('repo-description', function(description) {
   };
 });
 
+Handlebars.registerHelper('truncate', function(string, length, message) {
+  if (string != null && string.length > 0) {
+    if (string.length > length) {
+      return string.substring(0,length) + '...';
+    } else {
+      return string;
+    };
+  } else {
+    return message;
+  };
+});
+
 Handlebars.registerHelper('nil', function(data) {
   if (data != null && data.length > 0) {
     return data;
@@ -66,6 +78,15 @@ Handlebars.registerHelper('link', function(url) {
   };
 });
 
+function error(data) {
+  var error = $('<div id="error"></div>').css('opacity', 0);
+  error.html('<div class="error-message">'+data.message+'</div>');
+  $('#wrapper').css('opacity',0.1);
+  $('body').prepend(error);
+  error.animate({opacity: 1}, 200);
+  console.log(data);
+};
+
 function userLoader () {
   $('#user .inside').html("<div id='user-loading'></div>");
 }
@@ -80,6 +101,11 @@ GitHub = (function() {
       repos: null
     };
     
+    self.fetchUser();
+  };
+  
+  GitHub.prototype.fetchUser = function() {
+    var self = this;
     $.ajax({
       url: 'https://api.github.com/users/' + this.name,
       type: 'GET',
@@ -87,13 +113,18 @@ GitHub = (function() {
       complete: function(xhr, textStatus) {
         //called when complete
       },
-      success: function(data, textStatus, xhr) {
-        self.user = data.data;
+      success: function(json, textStatus, xhr) {
+        self.user = json.data;
+        self.fetchRepos();
       },
       error: function(xhr, textStatus, errorThrown) {
         self.userError();
       }
     });
+  };
+  
+  GitHub.prototype.fetchRepos = function() {
+    var self = this;
     
     $.ajax({
       url: 'https://api.github.com/users/'+this.name+'/repos',
@@ -104,12 +135,10 @@ GitHub = (function() {
       },
       success: function(data, textStatus, xhr) {
         var repos = data.data;
-        
         $('#page').html("<ul id='repos' class='repos'></ul>");
-        
+
         var count = 1;
         for (var i=0; i < repos.length; i++) {
-          
           if (count == 1) {
             repos[i].klass = 'first'
             self.addUserRepo(repos[i]);
@@ -123,16 +152,16 @@ GitHub = (function() {
             self.addUserRepo(repos[i]);
             count = 1;
           };
-          
+
         };
-        
+
         if (self.user) {
           self.user.repos = data.data;
           self.addUserInformation();
         } else {
           self.userError();
         };
-        
+
         $('#page #repos').css({
           opacity: 0
         });
@@ -147,11 +176,19 @@ GitHub = (function() {
   };
   
   GitHub.prototype.userError = function() {
-    console.log('error!');
+    var user = new Handlebars.SafeString(self.name).string;
+    error({
+      message: '<s>We</s> You were unable to fetch this users github information.',
+      user: user
+    });
   };
   
   GitHub.prototype.repoError = function() {
-    
+    var user = new Handlebars.SafeString(self.name).string;
+    error({
+      message: '<s>We</s> You were unable to fetch the repository list from github.',
+      user: user
+    });
   };
   
   GitHub.prototype.addUserRepo = function(repo) {
@@ -165,7 +202,7 @@ GitHub = (function() {
             <div class='repo-size'>{{size}} KB</div> \
           </div> \
           <div class='repo-metadata'> \
-            <div class='repo-description'>{{repo-description description}}</div> \
+            <div class='repo-description'>{{truncate description 130 \"This repository description is currently unavailable.\"}}</div> \
           </div> \
           <div class='repo-footer'> \
             <div class='repo-box first'>{{watchers}}<div class='box-title'>Watchers</div></div> \
@@ -180,6 +217,8 @@ GitHub = (function() {
   
   GitHub.prototype.addUserInformation = function() {
     var self = this;
+    //https://github.com/postmodern/followers
+    //https://github.com/postmodern/following
     var source = " \
     <div id='user-information'> \
       <div class='detail'> \
@@ -194,10 +233,30 @@ GitHub = (function() {
         </ul> \
       </div> \
       <ul id='user-info'> \
-        <li><div class='user-inside'><div class='info-title green'>followers</div><div class='info-count'>{{followers}}</div></div></li> \
-        <li><div class='user-inside'><div class='info-title blue'>following</div><div class='info-count'>{{following}}</div></div></li> \
-        <li><div class='user-inside'><div class='info-title orange'>public gists</div><div class='info-count'>{{public_gists}}</div></div></li> \
-        <li><div class='user-inside'><div class='info-title red'>public repos</div><div class='info-count'>{{public_repos}}</div></div></li> \
+        <li> \
+          <div class='user-inside'> \
+            <a href='https://github.com/{{login}}/followers' target='_blank'> \
+              <div class='info-title green'>followers</div><div class='info-count'>{{followers}}</div> \
+            </a> \
+          </div> \
+        </li> \
+        <li> \
+          <div class='user-inside'> \
+            <div class='info-title blue'>following</div><div class='info-count'>{{following}}</div> \
+          </div> \
+        </li> \
+        <li> \
+          <div class='user-inside'> \
+            <a href='https://gist.github.com/{{login}}' target='_blank'> \
+              <div class='info-title orange'>public gists</div><div class='info-count'>{{public_gists}}</div> \
+            </a> \
+          </div> \
+        </li> \
+        <li> \
+          <div class='user-inside'> \
+            <div class='info-title red'>public repos</div><div class='info-count'>{{public_repos}}</div> \
+          </div> \
+        </li> \
       </ul> \
     </div>";
     $('#user .inside').html(render(source, self.user));
@@ -234,6 +293,7 @@ Repo = (function() {
 jQuery(document).ready(function($) {
   $('form#find-user').submit(function(event) {
     event.preventDefault();
+    var self = this;
     var username = $('input', this).attr('value');
     
     if (username.length > 0) {
@@ -250,11 +310,19 @@ jQuery(document).ready(function($) {
     			history.pushState(null, document.title, username);
     		};
     		
-        $('input', this).attr('value', '').blur();
+        $('input', self).blur();
       });
-
     };
-    
+  });
+  
+  $('#error').live('click', function(event) {
+    event.preventDefault();
+    $(this).animate({
+      opacity: 0
+      }, 500, function() {
+      $(this).remove();
+      $('#wrapper').fadeTo('fast', 1);
+    });
   });
   
 });
