@@ -1,4 +1,7 @@
-$:.unshift File.join(File.dirname(__FILE__))
+# config.ru
 
-require 'lookycode'
-run Sinatra::Application
+require 'rubygems'
+require 'sinatra'
+
+require File.dirname(__FILE__) + "/lookycode.rb"
+run Sinatra::Applicationn
