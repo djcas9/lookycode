@@ -17,7 +17,7 @@ get '/:user' do
   erb :index
 end
 
-get '/fetch/:username' do
-  url = "https://api.github.com/users/#{params[:username]}/repos"
+get '/fetch/:user' do
+  url = "https://api.github.com/users/#{params[:user]}/repos"
   RestClient.get(url).to_json
 end
