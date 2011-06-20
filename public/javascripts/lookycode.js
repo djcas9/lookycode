@@ -226,6 +226,7 @@ GitHub = (function() {
     $.ajax({
       url: 'https://api.github.com/users/' + this.name,
       type: 'GET',
+      contentType: "application/json; charset=utf-8",
       dataType: 'jsonp',
       complete: function(xhr, textStatus) {
         //called when complete
@@ -242,16 +243,17 @@ GitHub = (function() {
   
   GitHub.prototype.fetchRepos = function() {
     var self = this;
-    
+    //https://api.github.com/users/'+this.name+'/repos'
     $.ajax({
-      url: 'https://api.github.com/users/'+this.name+'/repos',
+      url: '/fetch/' + this.name,
       type: 'GET',
-      dataType: 'jsonp',
+      contentType: "application/json; charset=utf-8",
+      dataType: 'json',
       complete: function(xhr, textStatus) {
         //called when complete
       },
       success: function(data, textStatus, xhr) {
-        var repos = data.data;
+        var repos = JSON.parse(data);
         $('#page').html("<ul id='repos' class='repos'></ul>");
         
         var count = 1;
@@ -314,6 +316,9 @@ GitHub = (function() {
   
   GitHub.prototype.addUserRepo = function(repo) {
     var self = this;
+    
+    console.log(repo)
+    
     var source = " \
       <li class='repo {{klass}}' data-size='{{size}}' data-lang='{{language}}' data-fork='{{fork}}'> \
         <div class='inside'> \
