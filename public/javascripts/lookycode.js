@@ -316,9 +316,6 @@ GitHub = (function() {
   
   GitHub.prototype.addUserRepo = function(repo) {
     var self = this;
-    
-    console.log(repo)
-    
     var source = " \
       <li class='repo {{klass}}' data-size='{{size}}' data-lang='{{language}}' data-fork='{{fork}}'> \
         <div class='inside'> \
