@@ -226,7 +226,7 @@ function loading(section, callback) {
     top: '450px',
     'z-index': 99999,
     left: $(window).width() / 2 - (341 / 2)
-  }).appendTo('#wrapper').animate({
+  }).appendTo('body').animate({
     opacity: 0.6
   }, 500);
   
