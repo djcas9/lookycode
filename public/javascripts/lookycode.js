@@ -224,6 +224,7 @@ function loading(section, callback) {
     opacity: 0,
     height: '104px',
     top: '450px',
+    'z-index': 99999,
     left: $(window).width() / 2 - (341 / 2)
   }).appendTo('#wrapper').animate({
     opacity: 0.6
