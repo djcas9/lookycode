@@ -37,6 +37,12 @@ function buildChart(username, repos) {
   var chart;
   var data = { watchers: [], categories: [], forks: [], issues: []};
   
+  if (repos.length < 2) {
+    var text = '<div id="no-data">This user does not have enough information to graph.</div>'
+    $('#page').prepend('<div id="user-metrics" style="width:960px;margin:auto;">' + text + '</div>');
+    return false;
+  };
+  
   $('#page').prepend('<div id="user-metrics" style="width:960px;margin:auto;"></div>');
   
   for (var i=0; i < repos.length; i++) {
@@ -204,198 +210,270 @@ function error(data) {
   error.animate({opacity: 1}, 200);
 };
 
-function userLoader () {
-  $('#user .inside').html("<div id='user-loading'></div>");
+function loading(section, callback) {
+  
+  var position = {
+    opacity: 1,
+    display: 'block'
+  };
+  
+  $('<img class="lookycode-loading" width="341px" height="104px" src="images/loading.png" />').css({
+    position: 'absolute',
+    display: 'block',
+    width: '341px',
+    opacity: 0,
+    height: '104px',
+    top: '450px',
+    left: $(window).width() / 2 - (341 / 2)
+  }).appendTo('#wrapper').animate({
+    opacity: 0.6
+  }, 500);
+  
+  $('#page').stop().css(position).animate({
+    opacity: 0,
+  }, 1000, function() {
+    
+    switch (section) {
+      case 'user':
+        $('#user .inside').html("<div id='user-loading'></div>");
+        break;
+      case 'page':
+        $('#page').html("<div id='loading'>Loading...</div>");
+        break;
+      default: 
+        $('#user .inside').html("<div id='user-loading'></div>");
+        $('#page').html("<div id='loading'>Loading...</div>");
+    };
+    
+    callback();
+  });
+  
 };
 
 GitHub = (function() {
   
-  function GitHub(username) {
+  function GitHub(username, callback) {
     var self = this;
-    this.name = username;
+    self.callback = callback;
+    
+    self.name = username;
     var raw = { 
       user: null, 
       repos: null
     };
     
+    self.urls = {
+      profile: {
+        api: 'https://api.github.com/users/' + self.name,
+        https: 'https://github.com/' + self.name,
+      },
+      repositories: {
+        api: 'https://api.github.com/users/'+self.name+'/repos',
+        https: 'https://github.com/' + self.name,
+        other: '/fetch/' + self.name
+      },
+      followers: {
+        api: 'https://api.github.com/users/'+self.name+'/followers',
+        https: 'https://github.com/'+self.name+'/followers'
+      },
+      following: {
+        api: 'https://github.com/users/'+self.name+'/following',
+        https: 'https://github.com/'+self.name+'/following'
+      }
+    };
+    
     self.fetchUser();
   };
   
-  GitHub.prototype.fetchUser = function() {
-    var self = this;
-    $.ajax({
-      url: 'https://api.github.com/users/' + this.name,
-      type: 'GET',
-      contentType: "application/json; charset=utf-8",
-      dataType: 'jsonp',
-      complete: function(xhr, textStatus) {
-        //called when complete
-      },
-      success: function(json, textStatus, xhr) {
-        self.user = json.data;
-        self.fetchRepos();
-      },
-      error: function(xhr, textStatus, errorThrown) {
-        self.userError();
-      }
-    });
-  };
-  
-  GitHub.prototype.fetchRepos = function() {
-    var self = this;
-    //https://api.github.com/users/'+this.name+'/repos'
-    $.ajax({
-      url: '/fetch/' + this.name,
-      type: 'GET',
-      contentType: "application/json; charset=utf-8",
-      dataType: 'json',
-      complete: function(xhr, textStatus) {
-        //called when complete
-      },
-      success: function(data, textStatus, xhr) {
-        var repos = JSON.parse(data);
-        $('#page').html("<ul id='repos' class='repos'></ul>");
-        
-        var count = 1;
-        for (var i=0; i < repos.length; i++) {
-          if (count == 1) {
-            repos[i].klass = 'first'
-            self.addUserRepo(repos[i]);
-            count++
-          } else if (count == 2) {
-            repos[i].klass = 'middle'
-            self.addUserRepo(repos[i]);
-            count++
-          } else {
-            repos[i].klass = 'last'
-            self.addUserRepo(repos[i]);
-            count = 1;
-          };
+  GitHub.prototype = {
+    
+    fetchUser: function() {
+       var self = this;
+       $.ajax({
+         url: self.urls.profile.api,
+         type: 'GET',
+         contentType: "application/json; charset=utf-8",
+         dataType: 'jsonp',
+         complete: function(xhr, textStatus) {
+           //called when complete
+         },
+         success: function(json, textStatus, xhr) {
+           self.user = json.data;
+           self.fetchRepos();
+         },
+         error: function(xhr, textStatus, errorThrown) {
+           self.userError();
+         }
+       });
+     },
 
-        };
-        
-        if (self.user) {
-          self.user.repos = data.data;
-          self.addUserInformation();
-        } else {
-          self.userError();
-        };
-        
-        buildChart(self.name, repos);
-        
-        $('#page #repos').css({
-          opacity: 0
-        });
-        
-        $('#page #repos').stop().animate({
-          'opacity': 1
-        }, 500);
-        
-      },
-      error: function(xhr, textStatus, errorThrown) {
-        self.repoError();
-      }
-    });
-  };
-  
-  GitHub.prototype.userError = function() {
-    var user = new Handlebars.SafeString(self.name).string;
-    error({
-      message: '<s>We</s> You were unable to fetch this users github information.',
-      user: user
-    });
-  };
-  
-  GitHub.prototype.repoError = function() {
-    var user = new Handlebars.SafeString(self.name).string;
-    error({
-      message: '<s>We</s> You were unable to fetch the repository list from github.',
-      user: user
-    });
-  };
-  
-  GitHub.prototype.addUserRepo = function(repo) {
-    var self = this;
-    var source = " \
-      <li class='repo {{klass}}' data-size='{{size}}' data-lang='{{language}}' data-fork='{{fork}}'> \
-        <div class='inside'> \
-          <div class='repo-title'> \
-            <div class='repo-name'><a href='{{html_url}}' target='_blank'>{{name}}</a></div> \
-            <div class='repo-size'>{{size}} KB</div> \
-          </div> \
-          <div class='repo-metadata'> \
-            <div class='repo-description'>{{truncate description 130 \"This repository description is currently unavailable.\"}}</div> \
-          </div> \
-          <div class='repo-footer'> \
-            <div class='repo-box first'> \
-              <a href='{{html_url}}/watchers' target='_blank'> \
-                {{watchers}}<div class='box-title'>Watchers</div> \
-              </a> \
-            </div> \
-            <div class='repo-box'> \
-              <a href='{{html_url}}/issues' target='_blank'> \
-                {{open_issues}}<div class='box-title'>Open Issues</div> \
-              </a> \
-            </div> \
-            <div class='repo-box last'> \
-              <a href='{{html_url}}/network' target='_blank'> \
-                {{forks}}<div class='box-title'>Forks</div> \
-              </a> \
-            </div> \
-          </div> \
-        </div> \
-      </li>";
+     fetchRepos: function() {
+       var self = this;
+       
+       $.ajax({
+         url: self.urls.repositories.other,
+         type: 'GET',
+         contentType: "application/json; charset=utf-8",
+         dataType: 'json',
+         success: function(data, textStatus, xhr) {
+           var repos = JSON.parse(data);
+           $('#page').html("<ul id='repos' class='repos'></ul>");
+
+           var count = 1;
+           for (var i=0; i < repos.length; i++) {
+             if (count == 1) {
+               repos[i].klass = 'first'
+               self.addUserRepo(repos[i]);
+               count++
+             } else if (count == 2) {
+               repos[i].klass = 'middle'
+               self.addUserRepo(repos[i]);
+               count++
+             } else {
+               repos[i].klass = 'last'
+               self.addUserRepo(repos[i]);
+               count = 1;
+             };
+
+           };
+
+           if (self.user) {
+             self.user.repos = data.data;
+             self.addUserInformation();
+           } else {
+             self.userError();
+           };
+           
+           buildChart(self.name, repos);
+           
+           self.callback();
+           
+         },
+         error: function(xhr, textStatus, errorThrown) {
+           self.repoError();
+         }
+       });
+     },
+
+     followers: function(){
+      var self = this;
       
-    $('#page ul#repos').append(render(source, repo));
-  };
-  
-  GitHub.prototype.addUserInformation = function() {
-    var self = this;
-    var source = " \
-    <div id='user-information'> \
-      <div class='detail'> \
-        <div id='avatar'> \
-          <img width='80' height='80' src='{{avatar_url}}' /> \
-        </div> \
-        <div id='name'>{{fullname}} <span class='username'>({{login}})</span></div> \
-        <ul id='more'> \
-          <li><div class='key'>Company</div> <div class='value'>{{nil company}}</div></li> \
-          <li><div class='key'>Website</div> <div class='value'><a href='{{link blog}}'>{{nil blog}}</a></div></li> \
-          <li><div class='key'>Location</div> <div class='value'>{{nil location}}</div></li> \
-        </ul> \
-      </div> \
-      <ul id='user-info'> \
-        <li> \
-          <div class='user-inside'> \
-            <a href='https://github.com/{{login}}/followers' target='_blank'> \
-              <div class='info-title green'>followers</div><div class='info-count'>{{followers}}</div> \
-            </a> \
-          </div> \
-        </li> \
-        <li> \
-          <div class='user-inside'> \
-            <a href='https://github.com/{{login}}/following' target='_blank'> \
-            <div class='info-title blue'>following</div><div class='info-count'>{{following}}</div> \
-            </a> \
-          </div> \
-        </li> \
-        <li> \
-          <div class='user-inside'> \
-            <a href='https://gist.github.com/{{login}}' target='_blank'> \
-              <div class='info-title orange'>public gists</div><div class='info-count'>{{public_gists}}</div> \
-            </a> \
-          </div> \
-        </li> \
-        <li> \
-          <div class='user-inside'> \
-            <a href='{{html_url}}' target='_blank'> \
-              <div class='info-title red'>public repos</div><div class='info-count'>{{public_repos}}</div> \
-            </a> \
-          </div> \
-        </li> \
-      </ul> \
-    </div>";
-    $('#user .inside').html(render(source, self.user));
+      $.ajax({
+        url: self.urls.followers.api,
+        type: 'GET',
+        contentType: "application/json; charset=utf-8",
+        dataType: 'jsonp',
+        success: function(data, textStatus, xhr) {
+          self.followers = data.data;
+          //console.log(self.followers);
+        },
+        error: function(xhr, textStatus, errorThrown) {
+          self.followers = [];
+          self.repoError();
+        }
+      });
+      
+     },
+
+     userError: function() {
+       var user = new Handlebars.SafeString(self.name).string;
+       error({
+         message: '<s>We</s> You were unable to fetch this users github information.',
+         user: user
+       });
+     },
+
+     repoError: function() {
+       var user = new Handlebars.SafeString(self.name).string;
+       error({
+         message: '<s>We</s> You were unable to fetch the repository list from github.',
+         user: user
+       });
+     },
+
+     addUserRepo: function(repo) {
+       var self = this;
+       var source = " \
+         <li class='repo {{klass}}' data-size='{{size}}' data-lang='{{language}}' data-fork='{{fork}}'> \
+           <div class='inside'> \
+             <div class='repo-title'> \
+               <div class='repo-name'><a href='{{html_url}}' target='_blank'>{{name}}</a></div> \
+               <div class='repo-size'>{{size}} KB</div> \
+             </div> \
+             <div class='repo-metadata'> \
+               <div class='repo-description'>{{truncate description 130 \"This repository description is currently unavailable.\"}}</div> \
+             </div> \
+             <div class='repo-footer'> \
+               <div class='repo-box first'> \
+                 <a href='{{html_url}}/watchers' target='_blank'> \
+                   {{watchers}}<div class='box-title'>Watchers</div> \
+                 </a> \
+               </div> \
+               <div class='repo-box'> \
+                 <a href='{{html_url}}/issues' target='_blank'> \
+                   {{open_issues}}<div class='box-title'>Open Issues</div> \
+                 </a> \
+               </div> \
+               <div class='repo-box last'> \
+                 <a href='{{html_url}}/network' target='_blank'> \
+                   {{forks}}<div class='box-title'>Forks</div> \
+                 </a> \
+               </div> \
+             </div> \
+           </div> \
+         </li>";
+
+       $('#page ul#repos').append(render(source, repo));
+     },
+     
+     addUserInformation: function(){
+       var self = this;
+       var source = " \
+       <div id='user-information'> \
+         <div class='detail'> \
+           <div id='avatar'> \
+             <img width='80' height='80' src='{{avatar_url}}' /> \
+           </div> \
+           <div id='name'>{{fullname}} <span class='username'>({{login}})</span></div> \
+           <ul id='more'> \
+             <li><div class='key'>Company</div> <div class='value'>{{nil company}}</div></li> \
+             <li><div class='key'>Website</div> <div class='value'><a href='{{link blog}}'>{{nil blog}}</a></div></li> \
+             <li><div class='key'>Location</div> <div class='value'>{{nil location}}</div></li> \
+           </ul> \
+         </div> \
+         <ul id='user-info'> \
+           <li> \
+             <div class='user-inside'> \
+               <a class='followers' href='https://github.com/{{login}}/followers' target='_blank'> \
+                 <div class='info-title green'>followers</div><div class='info-count'>{{followers}}</div> \
+               </a> \
+             </div> \
+           </li> \
+           <li> \
+             <div class='user-inside'> \
+               <a class='following' href='https://github.com/{{login}}/following' target='_blank'> \
+               <div class='info-title blue'>following</div><div class='info-count'>{{following}}</div> \
+               </a> \
+             </div> \
+           </li> \
+           <li> \
+             <div class='user-inside'> \
+               <a class='gists' href='https://gist.github.com/{{login}}' target='_blank'> \
+                 <div class='info-title orange'>public gists</div><div class='info-count'>{{public_gists}}</div> \
+               </a> \
+             </div> \
+           </li> \
+           <li> \
+             <div class='user-inside'> \
+               <a class='repositories' href='{{html_url}}' target='_blank'> \
+                 <div class='info-title red'>public repos</div><div class='info-count'>{{public_repos}}</div> \
+               </a> \
+             </div> \
+           </li> \
+         </ul> \
+       </div>";
+       $('#user .inside').html(render(source, self.user));
+     }
   };
   
   return GitHub;
@@ -427,19 +505,30 @@ Repo = (function() {
 })();
 
 jQuery(document).ready(function($) {
+  
+  var current_user = new GitHub(github_username);
+  
+  // $('a.followers').live('click', function(event) {
+  //   event.preventDefault();
+  //   current_user.followers();
+  // });
+  
   $('form#find-user').submit(function(event) {
     event.preventDefault();
     var self = this;
     var username = $('input', this).attr('value');
     
     if (username.length > 0) {
+      
+      loading('user', function() {
         
-      $('#page #repos').stop().animate({
-        'opacity': 0
-      }, 500, function() {
-        userLoader();
-        $('#page').attr('style', '');
-        new GitHub(username);
+        new GitHub(username, function() {
+          $('img.lookycode-loading').fadeOut('slow');
+          $('#page').animate({
+            opacity: 1
+          }, 1000);
+          
+        });
         $('title').html('Looky some code from ' + username);
 
         if (history && history.pushState) {
@@ -448,6 +537,7 @@ jQuery(document).ready(function($) {
     		
         $('input', self).blur();
       });
+      
     };
   });
   

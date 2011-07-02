@@ -1,7 +1,7 @@
 /* @group Main */
 
 html, body{
-	background-image: url(../images/bg.png);
+	background-image: url(../images/bg.png?1307304399);
 	line-height: 1.4em;
 	font-family: "Helvetica Neue", Arial, Helvetica, Geneva, sans-serif;
 	margin: 0;
@@ -24,11 +24,8 @@ ul{
 div#no-data{
 	color: #fff;
 	padding: 10px;
-	background-color: #981108;
-	border: 1px solid #450301;
-	text-shadow: #000 0 1px 0;
-	margin-top: 20px;
-	margin-bottom: 20px;
+	margin-top: 5px;
+	background-color: #d71e11;
 }
 
 span.na{
@@ -119,10 +116,8 @@ span.na{
 	display: block;
 	position: relative;
 	overflow: hidden;
+	margin: auto auto 10px;
 	width: 960px;
-	margin-right: auto;
-	margin-top: auto;
-	margin-left: auto;
 }
 
 #page #loading{
@@ -139,7 +134,6 @@ span.na{
 	color: #fff;
 	text-align: center;
 	font-size: 2.0em;
-	margin-bottom: 20px;
 }
 
 /* @end */
@@ -165,11 +159,11 @@ span.na{
 #wrapper #header .inside #logo{
 	width: 600px;
 	height: 200px;
-	background: url(../images/logo.png) no-repeat;
+	background: url(../images/logo.png?1308457690) no-repeat;
 	display: block;
 	position: absolute;
-	top: 0;
 	z-index: 99;
+	top: 0;
 	left: -50px;
 }
 
@@ -279,7 +273,7 @@ span.username{
 	left: 0;
 	overflow: hidden;
 	text-align: center;
-	background: url(../images/user-loader.gif) no-repeat center center;
+	background: url(../images/user-loader.gif?1308439888) no-repeat center center;
 }
 
 #wrapper #user .inside{
@@ -567,7 +561,7 @@ s{
 	left: 0;
 	margin: 0 auto auto;
 	border: 1px solid #000;
-	background: rgba(22,22,22,0.9) url(../images/error.png) no-repeat center 30px;
+	background: rgba(22,22,22,0.9) url(../images/error.png?1308461581) no-repeat center 30px;
 }
 
 #error .error-message{

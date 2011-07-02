@@ -1,17 +1,19 @@
 <!DOCTYPE HTML>
 	<html lang="en-EN">
+	
 	<head>
-		
 		<title>Looky some code from <%= @username %></title>
 		<link rel="stylesheet" type="text/css" href="assets/lookycode.css" media="all">
-		
-		<script type="text/javascript" src="javascripts/jquery.js"></script>
-		<script type="text/javascript" src="javascripts/highcharts.js"></script>
-		<script type="text/javascript" src="javascripts/handlebars.js"></script>
-    <script type="text/javascript" src="javascripts/lookycode.js"></script>
+		<script type="text/javascript">var github_username = "<%= @username %>";</script>
 	</head>
 	
 	<body>
     <%= yield %>
+    
+    <script type="text/javascript" src="javascripts/jquery.js"></script>
+		<script type="text/javascript" src="javascripts/highcharts.js"></script>
+		<script type="text/javascript" src="javascripts/handlebars.js"></script>
+    <script type="text/javascript" src="javascripts/lookycode.js"></script>
 	</body>
+	
 </html>

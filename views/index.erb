@@ -2,27 +2,21 @@
 	<div id="header">
 		<div class="inside">
 			<div id="logo"><a href="/"></a></div>
+      
       <div id="search">
         <form id='find-user'>
           <input type="text" name="" id="user-search" placeholder='Enter Github Username...' autocomplete='off' />
           <button class='default'><span>Search</span></button>
         </form>
-      </div>  
+      </div>
+      
 		</div>
 	</div>
 	
 	<div id="user"><div class="inside"><div id='user-loading'></div></div></div>
-	
-  <div id="page">
-    <div id="loading">Loading...</div>
-  </div>
-	
+	<div id="page"><div id="loading">Loading...</div></div>
 </div>
 
 <div id="footer">
-  <div class="inside">
-    http://lookycode.com &copy; <%= Time.now.year %> by Dustin Willis Webber using the Github API.
-  </div>
+  <div class="inside">http://lookycode.com &copy; <%= Time.now.year %> by Dustin Willis Webber using the Github API.</div>
 </div>
-
-<script type="text/javascript">$(function() { new GitHub('<%= @username %>') });</script>
