@@ -223,7 +223,7 @@ function loading(section, callback) {
     width: '341px',
     opacity: 0,
     height: '104px',
-    top: '450px',
+    top: '350px',
     'z-index': 99999,
     left: $(window).width() / 2 - (341 / 2)
   }).appendTo('body').animate({
