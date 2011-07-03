@@ -21,8 +21,8 @@ ul{
 
 /* @group Helpers */
 
-svg{
-	position: absolute;
+header,li.repo{
+	z-index: 999;
 }
 
 div#no-data{
@@ -726,6 +726,7 @@ ul#repos{
 	overflow: hidden;
 	padding: 0;
 	margin: 15px 0 0;
+	z-index:  -1;
 }
 
 ul#repos li{

@@ -620,23 +620,11 @@ GitHub = (function() {
            buildChart(self.name, repos);
            
            if (self.callback) { self.callback(); };
-           self.addTags();
          },
          error: function(xhr, textStatus, errorThrown) {
            self.repoError();
          }
        });
-     },
-
-     addTags: function(){
-      
-      var r = Raphael('page');
-      
-      $('li.repo').each(function(index) {
-        r.g.txtattr.font = "10px 'Fontin Sans', Fontin-Sans, sans-serif";
-        r.g.tag($(this).offset().left, $(this).offset().top, 'HEY', 100).attr({fill: "#fff", stroke: "none"});;
-      });
-      
      },
 
      followers: function(){
@@ -809,7 +797,9 @@ jQuery(document).ready(function($) {
           $('img.lookycode-loading').fadeOut('slow');
           $('#page').animate({
             opacity: 1
-          }, 1000);
+          }, 1000, function() {
+           $('img.lookycode-loading').remove(); 
+          });
           
         });
         $('title').html('Looky some code from ' + username);
