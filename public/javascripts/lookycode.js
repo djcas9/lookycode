@@ -525,7 +525,9 @@ jQuery(document).ready(function($) {
           $('img.lookycode-loading').fadeOut('slow');
           $('#page').animate({
             opacity: 1
-          }, 1000);
+          }, 1000, function() {
+           $('img.lookycode-loading').remove(); 
+          });
           
         });
         $('title').html('Looky some code from ' + username);
