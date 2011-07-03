@@ -273,6 +273,7 @@ discardElement:Fc,css:Ia,each:t,extend:qa,map:jc,merge:ya,pick:y,extendClass:xb,
 var GitHub;
 var Owner;
 var Repo;
+var current_user = 'mephux';
 
 (function($) {
   $.fn.sorted = function(customOptions) {
@@ -303,6 +304,42 @@ var __bind = function(fn, me) {
 function render(source, data) {
   var template = Handlebars.compile(source);
   return template(data);
+};
+
+function loading(section, callback) {
+
+  $('img.lookycode-loading').remove();
+  $('#user .inside').html("<div id='user-loading'></div>");
+  
+  if (section != 'error') {
+    
+    $('<img class="lookycode-loading" width="341px" height="104px" src="images/loading.png" />').css({
+      position: 'absolute',
+      display: 'block',
+      width: '341px',
+      opacity: 0,
+      height: '104px',
+      top: '350px',
+      'z-index': 99999,
+      left: $(window).width() / 2 - (341 / 2)
+    }).prependTo('body').animate({
+      opacity: 0.6
+    }, 500);
+    
+    $('#page').stop().css({
+      opacity: 1,
+      display: 'block'
+    }).animate({
+      opacity: 0.4,
+    }, 1000, function() {
+      
+      $('img.lookycode-loading').fadeOut('fast');
+      if (typeof callback == 'function') { callback(); };
+      
+    });
+    
+  };
+  
 };
 
 function buildChart(username, repos) {
@@ -482,48 +519,6 @@ function error(data) {
   error.animate({opacity: 1}, 200);
 };
 
-function loading(section, callback) {
-  
-  var position = {
-    opacity: 1,
-    display: 'block'
-  };
-  
-  $('img.lookycode-loading').remove();
-  $('<img class="lookycode-loading" width="341px" height="104px" src="images/loading.png" />').css({
-    position: 'absolute',
-    display: 'block',
-    width: '341px',
-    opacity: 0,
-    height: '104px',
-    top: '35g0px',
-    'z-index': 99999,
-    left: $(window).width() / 2 - (341 / 2)
-  }).appendTo('body').animate({
-    opacity: 0.6
-  }, 500);
-  
-  $('#page').stop().css(position).animate({
-    opacity: 0,
-  }, 1000, function() {
-    
-    switch (section) {
-      case 'user':
-        $('#user .inside').html("<div id='user-loading'></div>");
-        break;
-      case 'page':
-        $('#page').html("<div id='loading'>Loading...</div>");
-        break;
-      default: 
-        $('#user .inside').html("<div id='user-loading'></div>");
-        $('#page').html("<div id='loading'>Loading...</div>");
-    };
-    
-    callback();
-  });
-  
-};
-
 GitHub = (function() {
   
   function GitHub(username, callback) {
@@ -568,9 +563,6 @@ GitHub = (function() {
          type: 'GET',
          contentType: "application/json; charset=utf-8",
          dataType: 'jsonp',
-         complete: function(xhr, textStatus) {
-           //called when complete
-         },
          success: function(json, textStatus, xhr) {
            self.user = json.data;
            self.fetchRepos();
@@ -744,6 +736,7 @@ GitHub = (function() {
            </li> \
          </ul> \
        </div>";
+       
        $('#user .inside').html(render(source, self.user));
      }
   };
@@ -778,7 +771,7 @@ Repo = (function() {
 
 jQuery(document).ready(function($) {
   
-  var current_user = new GitHub(github_username);
+  current_user = new GitHub(github_username);
   
   // $('a.followers').live('click', function(event) {
   //   event.preventDefault();
@@ -794,20 +787,23 @@ jQuery(document).ready(function($) {
       
       loading('user', function() {
         
-        new GitHub(username, function() {
-          $('img.lookycode-loading').fadeOut('slow');
+        console.log('loading user')
+        current_user = new GitHub(username, function() {
+          
           $('#page').animate({
             opacity: 1
           }, 1000);
           
-        });
-        $('title').html('Looky some code from ' + username);
+          $('title').html('Looky some code from ' + username);
 
-        if (history && history.pushState) {
-    			history.pushState(null, document.title, username);
-    		};
-    		
-        $('input', self).blur();
+          if (history && history.pushState) {
+      			history.pushState(null, document.title, username);
+      		};
+
+          $('input', self).blur();
+          
+        });
+        
       });
       
     };
@@ -820,6 +816,11 @@ jQuery(document).ready(function($) {
       }, 500, function() {
       $(this).remove();
       $('#wrapper').fadeTo('fast', 1);
+      
+      loading('error', function() {
+       current_user = new GitHub('mephux');
+      });
+      
     });
   });
   
