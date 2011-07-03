@@ -31,7 +31,7 @@ var __bind = function(fn, me) {
 function render(source, data) {
   var template = Handlebars.compile(source);
   return template(data);
-}
+};
 
 function buildChart(username, repos) {
   var chart;
@@ -223,7 +223,7 @@ function loading(section, callback) {
     width: '341px',
     opacity: 0,
     height: '104px',
-    top: '350px',
+    top: '35g0px',
     'z-index': 99999,
     left: $(window).width() / 2 - (341 / 2)
   }).appendTo('body').animate({
@@ -347,8 +347,7 @@ GitHub = (function() {
            
            buildChart(self.name, repos);
            
-           self.callback();
-           
+           if (self.callback) { self.callback(); };
          },
          error: function(xhr, textStatus, errorThrown) {
            self.repoError();
@@ -366,7 +365,6 @@ GitHub = (function() {
         dataType: 'jsonp',
         success: function(data, textStatus, xhr) {
           self.followers = data.data;
-          //console.log(self.followers);
         },
         error: function(xhr, textStatus, errorThrown) {
           self.followers = [];
@@ -433,7 +431,7 @@ GitHub = (function() {
        <div id='user-information'> \
          <div class='detail'> \
            <div id='avatar'> \
-             <img width='80' height='80' src='{{avatar_url}}' /> \
+             <img width='80' height='80' id='user-avatar-paper' src='{{avatar_url}}' /> \
            </div> \
            <div id='name'>{{fullname}} <span class='username'>({{login}})</span></div> \
            <ul id='more'> \

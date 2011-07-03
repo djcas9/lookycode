@@ -21,6 +21,10 @@ ul{
 
 /* @group Helpers */
 
+svg{
+	position: absolute;
+}
+
 div#no-data{
 	color: #fff;
 	padding: 10px;
