@@ -559,7 +559,7 @@ GitHub = (function() {
            <div id='avatar'> \
              <img width='80' height='80' id='user-avatar-paper' src='{{avatar_url}}' /> \
            </div> \
-           <div id='name'>{{fullname}} <span class='username'>({{login}})</span></div> \
+           <div id='name'>{{fullname}} <span class='username' title='{{login}}'>({{truncate login 10 \"???\"}})</span></div> \
            <ul id='more'> \
              <li><div class='key'>Company</div> <div class='value'>{{nil company}}</div></li> \
              <li><div class='key'>Website</div> <div class='value'><a href='{{link blog}}'>{{nil blog}}</a></div></li> \
