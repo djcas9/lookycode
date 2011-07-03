@@ -29,6 +29,12 @@ var __bind = function(fn, me) {
   return function(){ return fn.apply(me, arguments) }; 
 };
 
+function update_request_count (requests) {
+  if (requests.meta) {
+    $('span#request-counter').html(requests.meta['X-RateLimit-Remaining']);
+  };
+};
+
 function render(source, data) {
   var template = Handlebars.compile(source);
   return template(data);
@@ -288,6 +294,8 @@ GitHub = (function() {
          contentType: "application/json; charset=utf-8",
          dataType: 'jsonp',
          success: function(json, textStatus, xhr) {
+           update_request_count(json);
+           
            self.user = json.data;
            self.user.more = {};
 
@@ -313,6 +321,7 @@ GitHub = (function() {
          contentType: "application/json; charset=utf-8",
          dataType: 'json',
          success: function(data, textStatus, xhr) {
+           update_request_count(data);
            self.repos = JSON.parse(data);
            
            self.build_repos();
@@ -379,6 +388,7 @@ GitHub = (function() {
           contentType: "application/json; charset=utf-8",
           dataType: 'jsonp',
           success: function(data, textStatus, xhr) {
+            update_request_count(data);
             self.user.more.followers = data.data;
             
             if (data.meta.Link) {
@@ -423,6 +433,8 @@ GitHub = (function() {
          type: 'GET',
          dataType: 'jsonp',
          success: function(data, textStatus, xhr) {
+           update_request_count(data);
+           
            for (var i=0; i < data.data.length; i++) {
              
             if (holder == 'followers') {
@@ -460,6 +472,7 @@ GitHub = (function() {
           contentType: "application/json; charset=utf-8",
           dataType: 'jsonp',
           success: function(data, textStatus, xhr) {
+            update_request_count(data);
             self.user.more.following = data.data;
             
             if (data.meta.Link) {
