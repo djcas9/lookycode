@@ -34,39 +34,35 @@ function render(source, data) {
   return template(data);
 };
 
-function loading(section, callback) {
+function loading(callback) {
 
   $('img.lookycode-loading').remove();
   $('#user .inside').html("<div id='user-loading'></div>");
   
-  if (section != 'error') {
+  $('<img class="lookycode-loading" width="341px" height="104px" src="images/loading.png" />').css({
+    position: 'absolute',
+    display: 'block',
+    width: '341px',
+    opacity: 0,
+    height: '104px',
+    top: '350px',
+    'z-index': 99999,
+    left: $(window).width() / 2 - (341 / 2)
+  }).prependTo('body').animate({
+    opacity: 0.6
+  }, 500);
+  
+  $('#page').stop().css({
+    opacity: 1,
+    display: 'block'
+  }).animate({
+    opacity: 0.4,
+  }, 700, function() {
     
-    $('<img class="lookycode-loading" width="341px" height="104px" src="images/loading.png" />').css({
-      position: 'absolute',
-      display: 'block',
-      width: '341px',
-      opacity: 0,
-      height: '104px',
-      top: '350px',
-      'z-index': 99999,
-      left: $(window).width() / 2 - (341 / 2)
-    }).prependTo('body').animate({
-      opacity: 0.6
-    }, 500);
+    $('img.lookycode-loading').fadeOut('fast');
+    if (typeof callback == 'function') { callback(); };
     
-    $('#page').stop().css({
-      opacity: 1,
-      display: 'block'
-    }).animate({
-      opacity: 0.4,
-    }, 1000, function() {
-      
-      $('img.lookycode-loading').fadeOut('fast');
-      if (typeof callback == 'function') { callback(); };
-      
-    });
-    
-  };
+  });
   
 };
 
@@ -513,14 +509,14 @@ jQuery(document).ready(function($) {
     
     if (username.length > 0) {
       
-      loading('user', function() {
+      loading(function() {
         
         console.log('loading user')
         current_user = new GitHub(username, function() {
           
           $('#page').animate({
             opacity: 1
-          }, 1000);
+          }, 500);
           
           $('title').html('Looky some code from ' + username);
 
@@ -543,10 +539,11 @@ jQuery(document).ready(function($) {
       opacity: 0
       }, 500, function() {
       $(this).remove();
-      $('#wrapper').fadeTo('fast', 1);
       
-      loading('error', function() {
-       current_user = new GitHub('mephux');
+      loading(function() {
+        current_user = new GitHub('mephux', function() {
+        $('#wrapper, #page').fadeTo('fast', 1);
+        });
       });
       
     });
