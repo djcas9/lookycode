@@ -270,17 +270,17 @@ GitHub = (function() {
         https: 'https://github.com/'+self.name+'/followers'
       },
       following: {
-        api: 'https://github.com/users/'+self.name+'/following',
+        api: 'https://api.github.com/users/'+self.name+'/following',
         https: 'https://github.com/'+self.name+'/following'
       }
     };
     
-    self.fetchUser();
+    self.fetch_user();
   };
   
   GitHub.prototype = {
     
-    fetchUser: function() {
+    fetch_user: function() {
        var self = this;
        $.ajax({
          url: self.urls.profile.api,
@@ -289,7 +289,14 @@ GitHub = (function() {
          dataType: 'jsonp',
          success: function(json, textStatus, xhr) {
            self.user = json.data;
-           self.fetchRepos();
+           self.user.more = {};
+
+           self.user.more.followers = null;
+           self.user.more.repos = null;
+           self.user.more.following = null;
+           self.user.more.gists = null;
+           
+           self.fetch_repos();
          },
          error: function(xhr, textStatus, errorThrown) {
            self.userError();
@@ -297,7 +304,7 @@ GitHub = (function() {
        });
      },
 
-     fetchRepos: function() {
+     fetch_repos: function() {
        var self = this;
        
        $.ajax({
@@ -306,35 +313,9 @@ GitHub = (function() {
          contentType: "application/json; charset=utf-8",
          dataType: 'json',
          success: function(data, textStatus, xhr) {
-           var repos = JSON.parse(data);
-           $('#page').html("<ul id='repos' class='repos'></ul>");
-
-           var count = 1;
-           for (var i=0; i < repos.length; i++) {
-             if (count == 1) {
-               repos[i].klass = 'first'
-               self.addUserRepo(repos[i]);
-               count++
-             } else if (count == 2) {
-               repos[i].klass = 'middle'
-               self.addUserRepo(repos[i]);
-               count++
-             } else {
-               repos[i].klass = 'last'
-               self.addUserRepo(repos[i]);
-               count = 1;
-             };
-
-           };
-
-           if (self.user) {
-             self.user.repos = data.data;
-             self.addUserInformation();
-           } else {
-             self.userError();
-           };
+           self.repos = JSON.parse(data);
            
-           buildChart(self.name, repos);
+           self.build_repos();
            
            if (self.callback) { self.callback(); };
          },
@@ -344,22 +325,165 @@ GitHub = (function() {
        });
      },
 
-     followers: function(){
+     build_repos: function(){
+       var self = this;
+       $('#page').html("<ul id='repos' class='repos'></ul>");
+
+       var count = 1;
+       for (var i=0; i < self.repos.length; i++) {
+         if (count == 1) {
+           self.repos[i].klass = 'first'
+           self.addUserRepo(self.repos[i]);
+           count++
+         } else if (count == 2) {
+           self.repos[i].klass = 'middle'
+           self.addUserRepo(self.repos[i]);
+           count++
+         } else {
+           self.repos[i].klass = 'last'
+           self.addUserRepo(self.repos[i]);
+           count = 1;
+         };
+
+       };
+       
+       if (self.user) {
+         self.user.repos = self.repos;
+         self.addUserInformation();
+       } else {
+         self.userError();
+       };
+       
+       buildChart(self.name, self.repos);
+     },
+
+     fetch_followers: function(){
       var self = this;
       
-      $.ajax({
-        url: self.urls.followers.api,
-        type: 'GET',
-        contentType: "application/json; charset=utf-8",
-        dataType: 'jsonp',
-        success: function(data, textStatus, xhr) {
-          self.followers = data.data;
-        },
-        error: function(xhr, textStatus, errorThrown) {
-          self.followers = [];
-          self.repoError();
-        }
-      });
+      var source = " \
+        <ul id='followers' class='image-box'> \
+          {{#more/followers}} \
+          <li> \
+            <a href='{{login}}' class='load-new-user' data-username='{{login}}'> \
+              <img width='80px' height='80px' src='{{avatar_url}}' /> \
+            </a> \
+            <div id='username'>{{truncate login 13 \"???\"}}</div> \
+          </li> \
+          {{/more/followers}} \
+        </ul>";
+      
+      if (self.user.more.followers == null) {
+        $.ajax({
+          url: self.urls.followers.api,
+          type: 'GET',
+          contentType: "application/json; charset=utf-8",
+          dataType: 'jsonp',
+          success: function(data, textStatus, xhr) {
+            self.user.more.followers = data.data;
+            
+            if (data.meta.Link) {
+              $('#page').html(render(source, self.user));
+              var count = parseInt(data.meta.Link[data.meta.Link.length - 1].toString().match(/page\=(\d+)/m)[1]) + 1;
+              
+              for (var i=2; i < count; i++) {
+                self.fetch_more('https://api.github.com/users/'+self.user.login+'/followers?page=' + i, 'followers');
+              };
+              
+            } else {
+              $('#page').html(render(source, self.user));
+            };
+            
+          },
+          error: function(xhr, textStatus, errorThrown) {
+            self.user.more.followers = [];
+            self.repoError();
+          }
+        });
+        
+      } else {
+        $('#page').html(render(source, self.user));
+      };
+      
+     },
+
+     fetch_more: function(url, holder){
+       var self = this;
+       var source = " \
+       {{#users}} \
+       <li> \
+         <a href='{{login}}' class='load-new-user' data-username='{{login}}'> \
+           <img width='80px' height='80px' src='{{avatar_url}}' /> \
+         </a> \
+         <div id='username'>{{truncate login 13 \"???\"}}</div> \
+       </li> \
+       {{/users}}";
+         
+       $.ajax({
+         url: url,
+         type: 'GET',
+         dataType: 'jsonp',
+         success: function(data, textStatus, xhr) {
+           for (var i=0; i < data.data.length; i++) {
+             
+            if (holder == 'followers') {
+              self.user.more.followers.push(data.data[i]);
+            } else {
+              self.user.more.following.push(data.data[i]);
+            };
+            
+           };
+           
+           $('ul#' + holder).append(render(source, { users: data.data }));
+         }
+       });
+     },
+
+     fetch_following: function(){
+      var self = this;
+      
+      var source = " \
+        <ul id='following' class='image-box'> \
+          {{#more/following}} \
+          <li> \
+            <a href='{{login}}' class='load-new-user' data-username='{{login}}'> \
+              <img width='80px' height='80px' src='{{avatar_url}}' /> \
+            </a> \
+            <div id='username'>{{truncate login 10 \"???\"}}</div> \
+          </li> \
+          {{/more/following}} \
+        </ul>";
+      
+      if (self.user.more.following == null) {
+        $.ajax({
+          url: self.urls.following.api,
+          type: 'GET',
+          contentType: "application/json; charset=utf-8",
+          dataType: 'jsonp',
+          success: function(data, textStatus, xhr) {
+            self.user.more.following = data.data;
+            
+            if (data.meta.Link) {
+              $('#page').html(render(source, self.user));
+              var count = parseInt(data.meta.Link[data.meta.Link.length - 1].toString().match(/page\=(\d+)/m)[1]) + 1;
+              
+              for (var i=2; i < count; i++) {
+                self.fetch_more('https://api.github.com/users/'+self.user.login+'/following?page=' + i, 'following');
+              };
+              
+            } else {
+              $('#page').html(render(source, self.user));
+            };
+
+          },
+          error: function(xhr, textStatus, errorThrown) {
+            self.user.more.following = [];
+            self.repoError();
+          }
+        });
+        
+      } else {
+        $('#page').html(render(source, self.user));
+      };
       
      },
 
@@ -410,7 +534,7 @@ GitHub = (function() {
              </div> \
            </div> \
          </li>";
-
+         
        $('#page ul#repos').append(render(source, repo));
      },
      
@@ -497,10 +621,56 @@ jQuery(document).ready(function($) {
   
   current_user = new GitHub(github_username);
   
-  // $('a.followers').live('click', function(event) {
-  //   event.preventDefault();
-  //   current_user.followers();
-  // });
+  $('a.followers').live('click', function(event) {
+    event.preventDefault();
+    current_user.fetch_followers();
+  });
+  
+  $('a.following').live('click', function(event) {
+    event.preventDefault();
+    current_user.fetch_following();
+  });
+  
+  $('a.repositories').live('click', function(event) {
+    event.preventDefault();
+    current_user.build_repos();
+  });
+  
+  $('a.load-new-user').live('click', function(event) {
+    event.preventDefault();
+    var username = $(this).data('username');
+    
+    $('img#user-avatar-paper').animate({
+      opacity: 0
+    }, 400);
+    
+    $.scrollTo('#header', 500);
+    
+    var image = $('img', this).clone().addClass('tmp-avatar').css({
+      display: 'block',
+      position: 'absolute',
+      'z-index': 99999,
+      overflow: 'hidden',
+    	border: '1px solid #383838',
+      top: $('img', this).offset().top,
+      left: $('img', this).offset().left
+    }).appendTo('body').animate({
+      top: $('img#user-avatar-paper').offset().top,
+      left: $('img#user-avatar-paper').offset().left
+    }, 400, function() {
+       current_user = new GitHub(username, function() {
+         $('title').html('Looky some code from ' + username);
+
+         if (history && history.pushState) {
+     			history.pushState(null, document.title, username);
+     		};
+        
+        $('img.tmp-avatar').remove();
+     });
+     
+    });
+    
+  });
   
   $('form#find-user').submit(function(event) {
     event.preventDefault();
@@ -511,7 +681,6 @@ jQuery(document).ready(function($) {
       
       loading(function() {
         
-        console.log('loading user')
         current_user = new GitHub(username, function() {
           
           $('#page').animate({

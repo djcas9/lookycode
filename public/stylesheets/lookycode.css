@@ -966,3 +966,67 @@ ul#repos li .inside div.repo-footer div.repo-box .box-title{
 }
 
 /* @end */
+
+/* @group Image List */
+
+ul.image-box{
+	position: relative;
+	display: block;
+	padding: 0;
+	list-style-type: none;
+	margin: 20px 0;
+	overflow: hidden;
+}
+
+ul.image-box li{
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+  	-webkit-box-shadow: inset 0px 1px 20px rgba(0,0,0,0.8);
+  	-moz-box-shadow: inset 0px 1px 20px rgba(0,0,0,0.8);
+  	box-shadow: inset 0px 1px 20px rgba(0,0,0,0.8);
+	width:  90px;
+	float: left;
+	display: block;
+	position: relative;
+	
+	background: #373637;
+	
+	border: 1px solid #4a4a4a;
+	padding: 5px;
+	margin: 9px 9px 10px;
+	height: 110px;
+}
+
+ul.image-box li #username{
+	vertical-align: middle;
+	display: block;
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	height: 30px;
+	line-height: 30px;
+	text-align: center;
+	font-weight: normal;
+	text-decoration: none;
+	font-variant: normal;
+	color: #fff;
+	text-shadow: #000 0 1px 0;
+	font-size: 0.8em;
+	font-style: normal;
+}
+
+ul.image-box img{
+  	-webkit-box-shadow: 0px 1px 20px rgba(0,0,0,0.8);
+  	-moz-box-shadow: 0px 1px 20px rgba(0,0,0,0.8);
+  	box-shadow: 0px 1px 20px rgba(0,0,0,0.8);
+	position: relative;
+	overflow: hidden;
+	display: block;
+	margin-top: 4px;
+	border: 1px solid #555;
+	margin-left: 4px;
+}
+
+/* @end */
