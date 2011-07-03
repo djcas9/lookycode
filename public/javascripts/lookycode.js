@@ -217,6 +217,7 @@ function loading(section, callback) {
     display: 'block'
   };
   
+  $('img.lookycode-loading').remove();
   $('<img class="lookycode-loading" width="341px" height="104px" src="images/loading.png" />').css({
     position: 'absolute',
     display: 'block',
@@ -525,9 +526,7 @@ jQuery(document).ready(function($) {
           $('img.lookycode-loading').fadeOut('slow');
           $('#page').animate({
             opacity: 1
-          }, 1000, function() {
-           $('img.lookycode-loading').remove(); 
-          });
+          }, 1000);
           
         });
         $('title').html('Looky some code from ' + username);
