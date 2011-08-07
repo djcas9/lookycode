@@ -16,3 +16,7 @@ get '/fetch/:user' do
   url = "https://api.github.com/users/#{params[:user]}/repos"
   RestClient.get(url).to_json
 end
+
+get '/so/hipster' do
+  erb :huh, :layout => false
+end

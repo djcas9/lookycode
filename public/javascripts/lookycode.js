@@ -45,7 +45,8 @@ function loading(callback) {
   $('img.lookycode-loading').remove();
   $('#user .inside').html("<div id='user-loading'></div>");
   
-  $('<img class="lookycode-loading" width="341px" height="104px" src="images/loading.png" />').css({
+  $('<img class="lookycode-loading" width="341px" height="104px" ' + 
+    'src="images/loading.png" />').css({
     position: 'absolute',
     display: 'block',
     width: '341px',
@@ -77,12 +78,17 @@ function buildChart(username, repos) {
   var data = { watchers: [], categories: [], forks: [], issues: []};
   
   if (repos.length < 2) {
-    var text = '<div id="no-data">This user does not have enough information to graph.</div>'
-    $('#page').prepend('<div id="user-metrics" style="width:960px;margin:auto;">' + text + '</div>');
+    var text = '<div id="no-data">This user does not have enough ' + 
+    'information to graph.</div>';
+
+    $('#page').prepend('<div id="user-metrics" ' + 
+    'style="width:960px;margin:auto;">' + text + '</div>');
+
     return false;
   };
   
-  $('#page').prepend('<div id="user-metrics" style="width:960px;margin:auto;"></div>');
+  $('#page').prepend('<div id="user-metrics" ' + 
+  'style="width:960px;margin:auto;"></div>');
   
   for (var i=0; i < repos.length; i++) {
     data.categories.push(repos[i].name)
@@ -371,14 +377,14 @@ GitHub = (function() {
       
       var source = " \
         <ul id='followers' class='image-box'> \
-          {{#more/followers}} \
-          <li> \
-            <a href='{{login}}' class='load-new-user' data-username='{{login}}'> \
-              <img width='80px' height='80px' src='{{avatar_url}}' /> \
-            </a> \
-            <div id='username'>{{truncate login 13 \"???\"}}</div> \
-          </li> \
-          {{/more/followers}} \
+        {{#more/followers}} \
+        <li> \
+        <a href='{{login}}' class='load-new-user' data-username='{{login}}'> \
+          <img width='80px' height='80px' src='{{avatar_url}}' /> \
+        </a> \
+        <div id='username'>{{truncate login 13 \"???\"}}</div> \
+        </li> \
+        {{/more/followers}} \
         </ul>";
       
       if (self.user.more.followers == null) {
@@ -393,10 +399,15 @@ GitHub = (function() {
             
             if (data.meta.Link) {
               $('#page').html(render(source, self.user));
-              var count = parseInt(data.meta.Link[data.meta.Link.length - 1].toString().match(/page\=(\d+)/m)[1]) + 1;
+              
+              var count = parseInt(data.meta.Link[data.meta.Link.length - 1]
+              .toString().match(/page\=(\d+)/m)[1]) + 1;
               
               for (var i=2; i < count; i++) {
-                self.fetch_more('https://api.github.com/users/'+self.user.login+'/followers?page=' + i, 'followers');
+                
+                self.fetch_more('https://api.github.com/users/' + 
+                self.user.login + '/followers?page=' + i, 'followers');
+
               };
               
             } else {
@@ -503,7 +514,8 @@ GitHub = (function() {
      userError: function() {
        var user = new Handlebars.SafeString(self.name).string;
        error({
-         message: '<s>We</s> You were unable to fetch this users github information.',
+         message: '<s>We</s> You were unable to fetch this users' + 
+          ' github information.',
          user: user
        });
      },
