@@ -25,11 +25,11 @@ Grid = function() {
 
     $('body').css(css);
     self.$grid.css(css);
-    $('<style />').html('html,body{text-decoration: none;font: normal normal normal 1.0em/1.4em "Lucida Grande", Lucida, Verdana, sans-serif;}.other-way{background:url(../images/crazy-shit2.png) no-repeat center center !important;}.basic-way{background:url(../images/crazy-shit.png) no-repeat center center;}#hipster {display: block;position: absolute;overflow: hidden;width: 960px;height: 300px;margin: auto;top: 0;right: 0;left: 0;background: url(../images/hip.png) no-repeat center center;}#footer {border-top: 1px solid #909090;height: 35px;line-height: 34px;text-align: center;display: block;position: absolute;bottom: 0;left: 0;right: 0;overflow: hidden;color: #fffeff;background-color: rgba(0,0,0,0.26);font-weight: bold;text-decoration: none;font-variant: normal;text-shadow: #000 0 1px 0;}#footer a {color: #e0e0e0;font-weight: normal;font-style: normal;text-decoration: none;font-variant: normal;}')
+    $('<style />').html('html,body{text-decoration: none;font: normal normal normal 1.0em/1.4em "Lucida Grande", Lucida, Verdana, sans-serif;}.other-way{background: url(../images/crazy-shit2.png) no-repeat center center !important;}.basic-way{background: url(../images/crazy-shit.png) no-repeat center center;}#hipster {display: block;position: absolute;overflow: hidden;width: 960px;height: 300px;margin: auto;top: 0;right: 0;left: 0;background: url(../images/hip.png) no-repeat center center;}#footer {border-top: 1px solid #888;height: 35px;line-height: 34px;text-align: center;display: block;position: absolute;bottom: 0;left: 0;right: 0;overflow: hidden;color: #000;background-color: rgba(0,0,0,0.26);text-decoration: none;font-variant: normal;text-shadow: #ddd 0 1px 0;}#footer a {color: #111;font-weight: normal;font-style: normal;text-decoration: underline;font-variant: normal;')
     .appendTo('head');
 
     self.$footer = $('<div id="footer" />');
-    self.$footer.html('By <a href="http://twitter.com/mephux">Mephux</a> - Keep it Hipster Kids!');
+    self.$footer.html('<a href="http://twitter.com/mephux">Mephux</a> | Keep it Hipster Kids!');
     self.$footer.appendTo('Body');
 
     self.$imageHolder = $('<div id="image-holder">');
@@ -44,27 +44,40 @@ Grid = function() {
     self.imageRotate = 100;
     self.imageScale = 100;
 
-    setInterval(function() {
+    var changeImage = setInterval(function() {
       self.image();
     }, 30);
 
     setTimeout(function() {
       $('<div id="hipster" />').appendTo('body');
-
       self.imageRotate = 20000;
       self.imageScale = 20000;
-    }, 13100);
+    }, 13600);
 
     setInterval(function() {
-      self.imageRotate = 100;
+      clearInterval(changeImage);
+      self.$imageHolder.attr('style', '');
+
+      self.$imageHolder.addClass('basic-way').css(css).css({
+        '-webkit-transition': 'all 3s ease-in-out',
+        '-moz-transition': 'all 3s ease-in-out',
+        '-ms-transform': 'all 3s ease-in-out',
+        '-o-transition': 'all 3s ease-in-out'      
+      });
+
+      self.imageRotate = 1;
       self.imageScale = 100;
 
       setTimeout(function() {
         self.imageRotate = 20000;
         self.imageScale = 20000;
-      }, 13100);
 
-    }, 71000);
+        var changeImage = setInterval(function() {
+          self.image();
+        }, 30);
+      }, 20500);
+
+    }, 55000);
 
     setInterval(function() {
       self.$imageHolder.toggleClass('other-way');
@@ -151,8 +164,8 @@ jQuery(document).ready(function($) {
 
   var grid = new Grid({
     container: '#wrapper',
-    columns: 10,
-    rows: 10
+    columns: 20,
+    rows: 20
   });
 
   $(window).resize(function() {
