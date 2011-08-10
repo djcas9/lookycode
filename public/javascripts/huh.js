@@ -4,6 +4,9 @@ Grid = function() {
   
   function Grid (options) {
     var self = this;
+    
+    self.firstInterval = 20500;
+
     self.options = {
       container: options.container || 'body',
       columns: options.columns || 10,
@@ -25,7 +28,7 @@ Grid = function() {
 
     $('body').css(css);
     self.$grid.css(css);
-    $('<style />').html('html,body{text-decoration: none;font: normal normal normal 1.0em/1.4em "Lucida Grande", Lucida, Verdana, sans-serif;}.other-way{background: url(../images/crazy-shit2.png) no-repeat center center !important;}.basic-way{background: url(../images/crazy-shit.png) no-repeat center center;}#hipster {display: block;position: absolute;overflow: hidden;width: 960px;height: 300px;margin: auto;top: 0;right: 0;left: 0;background: url(../images/hip.png) no-repeat center center;}#footer {border-top: 1px solid #888;height: 35px;line-height: 34px;text-align: center;display: block;position: absolute;bottom: 0;left: 0;right: 0;overflow: hidden;color: #000;background-color: rgba(0,0,0,0.26);text-decoration: none;font-variant: normal;text-shadow: #ddd 0 1px 0;}#footer a {color: #111;font-weight: normal;font-style: normal;text-decoration: underline;font-variant: normal;')
+    $('<style />').html('html,body{text-decoration: none;font: normal normal normal 1.0em/1.4em "Lucida Grande", Lucida, Verdana, sans-serif;}.dance{background: url(../images/smile.png) no-repeat center center !important;}.other-way{background: url(../images/crazy-shit2.png) no-repeat center center;}.basic-way{background: url(../images/crazy-shit.png) no-repeat center center !important;}#hipster {display: block;position: absolute;overflow: hidden;width: 960px;height: 300px;margin: auto;top: 0;right: 0;left: 0;background: url(../images/hip.png) no-repeat center center;}#footer {border-top: 1px solid #888;height: 35px;line-height: 34px;text-align: center;display: block;position: absolute;bottom: 0;left: 0;right: 0;overflow: hidden;color: #000;background-color: rgba(0,0,0,0.26);text-decoration: none;font-variant: normal;text-shadow: #ddd 0 1px 0;}#footer a {color: #111;font-weight: normal;font-style: normal;text-decoration: underline;font-variant: normal;')
     .appendTo('head');
 
     self.$footer = $('<div id="footer" />');
@@ -41,8 +44,18 @@ Grid = function() {
       '-o-transition': 'all 3s ease-in-out'      
     }).appendTo('body');
 
-    self.imageRotate = 100;
+    self.imageRotate = 1;
     self.imageScale = 100;
+
+    var toggleFace = setInterval(function() {
+      if (self.$imageHolder.hasClass('other-way')) {
+        self.$imageHolder.removeClass('other-way');
+        self.$imageHolder.addClass('basic-way');
+      } else {
+        self.$imageHolder.addClass('other-way');
+        self.$imageHolder.removeClass('basic-way');
+      }; 
+    }, 5000);
 
     var changeImage = setInterval(function() {
       self.image();
@@ -50,12 +63,19 @@ Grid = function() {
 
     setTimeout(function() {
       $('<div id="hipster" />').appendTo('body');
+      clearInterval(toggleFace);
+
+      self.$imageHolder.removeClass('other-way');
+      self.$imageHolder.removeClass('basic-way');
+      self.$imageHolder.addClass('dance');
+
       self.imageRotate = 20000;
       self.imageScale = 20000;
-    }, 13600);
+    }, 13700);
 
     setInterval(function() {
       clearInterval(changeImage);
+      self.$imageHolder.removeClass('dance');
       self.$imageHolder.attr('style', '');
 
       self.$imageHolder.addClass('basic-way').css(css).css({
@@ -67,21 +87,35 @@ Grid = function() {
 
       self.imageRotate = 1;
       self.imageScale = 100;
+      
+      toggleFace = setInterval(function() {
+        if (self.$imageHolder.hasClass('other-way')) {
+          self.$imageHolder.removeClass('other-way');
+          self.$imageHolder.addClass('basic-way');
+        } else {
+          self.$imageHolder.addClass('other-way');
+          self.$imageHolder.removeClass('basic-way');
+        }; 
+      }, 5000);
 
       setTimeout(function() {
+        clearInterval(toggleFace);
+
         self.imageRotate = 20000;
         self.imageScale = 20000;
 
-        var changeImage = setInterval(function() {
+        changeImage = setInterval(function() {
+          self.$imageHolder.removeClass('other-way');
+          self.$imageHolder.removeClass('basic-way');
+          self.$imageHolder.addClass('dance');
           self.image();
         }, 30);
-      }, 20500);
+
+      self.firstInterval = 13600;
+
+      }, self.firstInterval);
 
     }, 55000);
-
-    setInterval(function() {
-      self.$imageHolder.toggleClass('other-way');
-    }, 5000);
 
     self.build();
     return self;
