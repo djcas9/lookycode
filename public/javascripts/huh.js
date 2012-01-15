@@ -226,6 +226,13 @@ jQuery(document).ready(function($) {
         setInterval(function() {
           grid.build();
         }, 300);
+      },
+      onfinish: function() {
+        var grid = new Grid({
+          container: '.wrapper',
+          columns: 8,
+          rows: 8
+        });      
       }
     });
 
