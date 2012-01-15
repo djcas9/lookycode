@@ -1,5 +1,9 @@
 var Grid;
 
+soundManager.url = '../swf/';
+soundManager.flashVersion = 9;
+soundManager.useFlashBlock = false;
+
 Grid = function() {
   
   function Grid (options) {
@@ -194,21 +198,40 @@ Grid = function() {
   return Grid;
 }();
 
+// <audio src="../crazyshit.ogg" autoplay='true' loop='true' preload='true' />
+
 jQuery(document).ready(function($) {
 
   var grid = new Grid({
-    container: '#wrapper',
-    columns: 20,
-    rows: 20
+    container: '.wrapper',
+    columns: 8,
+    rows: 8
   });
 
-  $(window).resize(function() {
-    grid.build();
+  soundManager.onready(function() {
+
+    var song = soundManager.createSound({
+      id: "HIPSTER",
+      url: 'http://www.lookycode.com/crazyshit.ogg',
+      autoLoad: true,
+      autoPlay: false,
+      volume: 100,
+      stream: true,
+      loops: 100,
+      onplay: function() {
+        $(window).resize(function() {
+          grid.build();
+        });
+
+        setInterval(function() {
+          grid.build();
+        }, 300);
+      }
+    });
+
+    song.play();
   });
 
-  setInterval(function() {
-    grid.build();
-  }, 300);
 });
 
 

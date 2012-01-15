@@ -270,6 +270,598 @@ this.data,b,c=this.chart,d=this.options.dataLabels,e=y(d.connectorPadding,10),f=
 F[U][R];if(g=b.dataLabel){i=b.labelPos;ka=Bb;W=i[0];ca=i[1];j||(j=g&&g.getBBox().height);if(k)if(v&&b.rank<a)ka=vb;else if(!da&&ca<n+j||da&&ca>n-j){ca=n+I*j;W=this.getX(ca,U>1);if(!da&&ca+j>z||da&&ca-j<z)if(v)ka=vb;else a++}if(b.visible===false)ka=vb;if(ka==Bb)n=ca;if(v){g.attr({visibility:ka,align:i[6]})[g.moved?"animate":"attr"]({x:W+d.x+({left:e,right:-e}[i[6]]||0),y:ca+d.y});g.moved=true;if(k&&f){g=b.connector;i=[Za,W+(i[6]=="left"?5:-5),ca,Da,W,ca,Da,i[2],i[3],Da,i[4],i[5]];if(g){g.animate({d:i});
 g.attr("visibility",ka)}else b.connector=g=this.chart.renderer.path(i).attr({"stroke-width":f,stroke:d.connectorColor||"#606060",visibility:ka,zIndex:3}).translate(c.plotLeft,c.plotTop).add()}}}}}}},drawTracker:ad.prototype.drawTracker,getSymbol:function(){}});ub.pie=Ma;ib.Highcharts={Chart:Hd,dateFormat:Mc,pathAnim:$c,getOptions:function(){return Sa},numberFormat:Gd,Point:zc,Color:Ub,Renderer:Qd,seriesTypes:ub,setOptions:function(a){Sa=ya(Sa,a);Bd();return Sa},Series:mb,addEvent:Qa,createElement:fb,
 discardElement:Fc,css:Ia,each:t,extend:qa,map:jc,merge:ya,pick:y,extendClass:xb,version:"2.1.4"}})();
+
+
+//
+// Generated on Tue Dec 06 2011 04:47:21 GMT-0500 (EST) by Nodejitsu, Inc (Using Codesurgeon).
+// Version 1.0.7
+//
+
+(function (exports) {
+
+
+/*
+ * browser.js: Browser specific functionality for director.
+ *
+ * (C) 2011, Nodejitsu Inc.
+ * MIT LICENSE
+ *
+ */
+
+if (!Array.prototype.filter) {
+  Array.prototype.filter = function(filter, that) {
+    var other = [], v;
+    for (var i = 0, n = this.length; i < n; i++) {
+      if (i in this && filter.call(that, v = this[i], i, this)) {
+        other.push(v);
+      }
+    }
+    return other;
+  };
+}
+
+if (!Array.isArray){
+  Array.isArray = function(obj) {
+    return Object.prototype.toString.call(obj) === '[object Array]';
+  };
+}
+
+var dloc = document.location;
+
+var listener = {
+  mode: 'modern',
+  hash: dloc.hash,
+
+  check: function () {
+    var h = dloc.hash;
+    if (h != this.hash) {
+      this.hash = h;
+      this.onHashChanged();
+    }
+  },
+
+  fire: function () {
+    if (this.mode === 'modern') {
+      window.onhashchange();
+    }
+    else {
+      this.onHashChanged();
+    }
+  },
+
+  init: function (fn) {
+    var self = this;
+
+    if (!window.Router.listeners) {
+      window.Router.listeners = [];
+    }
+
+    function onchange() {
+      for (var i = 0, l = window.Router.listeners.length; i < l; i++) {
+        window.Router.listeners[i]();
+      }
+    }
+
+    //note IE8 is being counted as 'modern' because it has the hashchange event
+    if ('onhashchange' in window && (document.documentMode === undefined
+      || document.documentMode > 7)) {
+      window.onhashchange = onchange;
+      this.mode = 'modern';
+    }
+    else {
+      //
+      // IE support, based on a concept by Erik Arvidson ...
+      //
+      var frame = document.createElement('iframe');
+      frame.id = 'state-frame';
+      frame.style.display = 'none';
+      document.body.appendChild(frame);
+      this.writeFrame('');
+
+      if ('onpropertychange' in document && 'attachEvent' in document) {
+        document.attachEvent('onpropertychange', function () {
+          if (event.propertyName === 'location') {
+            self.check();
+          }
+        });
+      }
+
+      window.setInterval(function () { self.check(); }, 50);
+
+      this.onHashChanged = onchange;
+      this.mode = 'legacy';
+    }
+
+    window.Router.listeners.push(fn);
+
+    return this.mode;
+  },
+
+  destroy: function (fn) {
+    if (!window.Router || !window.Router.listeners) {
+      return;
+    }
+
+    var listeners = window.Router.listeners;
+
+    for (var i = listeners.length - 1; i >= 0; i--) {
+      if (listeners[i] === fn) {
+        listeners.splice(i, 1);
+      }
+    }
+  },
+
+  setHash: function (s) {
+    // Mozilla always adds an entry to the history
+    if (this.mode === 'legacy') {
+      this.writeFrame(s);
+    }
+
+    dloc.hash = (s[0] === '/') ? s : '/' + s;
+    return this;
+  },
+
+  writeFrame: function (s) {
+    // IE support...
+    var f = document.getElementById('state-frame');
+    var d = f.contentDocument || f.contentWindow.document;
+    d.open();
+    d.write("<script>_hash = '" + s + "'; onload = parent.listener.syncHash;<script>");
+    d.close();
+  },
+
+  syncHash: function () {
+    // IE support...
+    var s = this._hash;
+    if (s != dloc.hash) {
+      dloc.hash = s;
+    }
+    return this;
+  },
+
+  onHashChanged: function () {}
+};
+
+var Router = exports.Router = function (routes) {
+  if (!(this instanceof Router)) return new Router(routes);
+
+  this.params   = {};
+  this.routes   = {};
+  this.methods  = ['on', 'once', 'after', 'before'];
+  this._methods = {};
+
+  this._insert = this.insert;
+  this.insert = this.insertEx;
+
+  this.configure();
+  this.mount(routes || {});
+};
+
+Router.prototype.init = function (r) {
+  var self = this;
+  this.handler = function() {
+    var hash = dloc.hash.replace(/^#/, '');
+    self.dispatch('on', hash);
+  };
+
+  if (dloc.hash === '' && r) {
+    dloc.hash = r;
+  }
+
+  if (dloc.hash.length > 0) {
+    this.handler();
+  }
+
+  listener.init(this.handler);
+  return this;
+};
+
+Router.prototype.explode = function () {
+  var v = dloc.hash;
+  if (v[1] === '/') { v=v.slice(1) }
+  return v.slice(1, v.length).split("/");
+};
+
+Router.prototype.setRoute = function (i, v, val) {
+  var url = this.explode();
+
+  if (typeof i === 'number' && typeof v === 'string') {
+    url[i] = v;
+  }
+  else if (typeof val === 'string') {
+    url.splice(i, v, s);
+  }
+  else {
+    url = [i];
+  }
+
+  listener.setHash(url.join('/'));
+  return url;
+};
+
+//
+// ### function insertEx(method, path, route, parent)
+// #### @method {string} Method to insert the specific `route`.
+// #### @path {Array} Parsed path to insert the `route` at.
+// #### @route {Array|function} Route handlers to insert.
+// #### @parent {Object} **Optional** Parent "routes" to insert into.
+// insert a callback that will only occur once per the matched route.
+//
+Router.prototype.insertEx = function(method, path, route, parent) {
+  if (method === "once") {
+    method = "on";
+    route = function(route) {
+      var once = false;
+      return function() {
+        if (once) return;
+        once = true;
+        return route.apply(this, arguments);
+      };
+    }(route);
+  }
+  return this._insert(method, path, route, parent);
+};
+
+
+Router.prototype.getState = function () {
+  return this.state;
+};
+
+Router.prototype.getRoute = function (v) {
+  var ret = v;
+
+  if (typeof v === "number") {
+    ret = this.explode()[v];
+  }
+  else if (typeof v === "string"){
+    var h = this.explode();
+    ret = h.indexOf(v);
+  }
+  else {
+    ret = this.explode();
+  }
+
+  return ret;
+};
+
+Router.prototype.destroy = function () {
+  listener.destroy(this.handler);
+  return this;
+};function _every(arr, iterator) {
+    for (var i = 0; i < arr.length; i += 1) {
+        if (iterator(arr[i], i, arr) === false) {
+            return;
+        }
+    }
+}
+
+function _flatten(arr) {
+    var flat = [];
+    for (var i = 0, n = arr.length; i < n; i++) {
+        flat = flat.concat(arr[i]);
+    }
+    return flat;
+}
+
+function _asyncEverySeries(arr, iterator, callback) {
+    if (!arr.length) {
+        return callback();
+    }
+    var completed = 0;
+    (function iterate() {
+        iterator(arr[completed], function(err) {
+            if (err || err === false) {
+                callback(err);
+                callback = function() {};
+            } else {
+                completed += 1;
+                if (completed === arr.length) {
+                    callback();
+                } else {
+                    iterate();
+                }
+            }
+        });
+    })();
+}
+
+function paramifyString(str, params, mod) {
+    mod = str;
+    for (var param in params) {
+        if (params.hasOwnProperty(param)) {
+            mod = params[param](str);
+            if (mod !== str) {
+                break;
+            }
+        }
+    }
+    return mod === str ? "([a-zA-Z0-9-]+)" : mod;
+}
+
+function regifyString(str, params) {
+    if (~str.indexOf("*")) {
+        str = str.replace(/\*/g, "([_.()!\\ %@&a-zA-Z0-9-]+)");
+    }
+    var captures = str.match(/:([^\/]+)/ig), length;
+    if (captures) {
+        length = captures.length;
+        for (var i = 0; i < length; i++) {
+            str = str.replace(captures[i], paramifyString(captures[i], params));
+        }
+    }
+    return str;
+}
+
+Router.prototype.configure = function(options) {
+    options = options || {};
+    for (var i = 0; i < this.methods.length; i++) {
+        this._methods[this.methods[i]] = true;
+    }
+    this.recurse = options.recurse || this.recurse || false;
+    this.async = options.async || false;
+    this.delimiter = options.delimiter || "/";
+    this.strict = typeof options.strict === "undefined" ? true : options.strict;
+    this.notfound = options.notfound;
+    this.resource = options.resource;
+    this.every = {
+        after: options.after || null,
+        before: options.before || null,
+        on: options.on || null
+    };
+    return this;
+};
+
+Router.prototype.param = function(token, matcher) {
+    if (token[0] !== ":") {
+        token = ":" + token;
+    }
+    var compiled = new RegExp(token, "g");
+    this.params[token] = function(str) {
+        return str.replace(compiled, matcher.source || matcher);
+    };
+};
+
+Router.prototype.on = Router.prototype.route = function(method, path, route) {
+    var self = this;
+    if (!route && typeof path == "function") {
+        route = path;
+        path = method;
+        method = "on";
+    }
+    if (path.source) {
+        path = path.source.replace(/\\\//ig, "/");
+    }
+    if (Array.isArray(method)) {
+        return method.forEach(function(m) {
+            self.on(m.toLowerCase(), path, route);
+        });
+    }
+    this.insert(method, this.scope.concat(path.split(new RegExp(this.delimiter))), route);
+};
+
+Router.prototype.dispatch = function(method, path, callback) {
+    var self = this, fns = this.traverse(method, path, this.routes, ""), invoked = this._invoked, after;
+    this._invoked = true;
+    if (!fns || fns.length === 0) {
+        this.last = [];
+        if (typeof this.notfound === "function") {
+            this.invoke([ this.notfound ], {
+                method: method,
+                path: path
+            }, callback);
+        }
+        return false;
+    }
+    if (this.recurse === "forward") {
+        fns = fns.reverse();
+    }
+    function updateAndInvoke() {
+        self.last = fns.after;
+        self.invoke(self.runlist(fns), self, callback);
+    }
+    after = this.every && this.every.after ? [ this.every.after ].concat(this.last) : [ this.last ];
+    if (after && after.length > 0 && invoked) {
+        if (this.async) {
+            this.invoke(after, this, updateAndInvoke);
+        } else {
+            this.invoke(after, this);
+            updateAndInvoke();
+        }
+        return true;
+    }
+    updateAndInvoke();
+    return true;
+};
+
+Router.prototype.invoke = function(fns, thisArg, callback) {
+    var self = this;
+    if (this.async) {
+        _asyncEverySeries(fns, function(fn, next) {
+            if (typeof fn == "function") {
+                fn.apply(thisArg, fns.captures.concat(next));
+            }
+        }, function() {
+            if (callback) {
+                callback.apply(thisArg, arguments);
+            }
+        });
+    } else {
+        _every(fns, function apply(fn) {
+            if (Array.isArray(fn)) {
+                return _every(fn, apply);
+            } else if (typeof fn === "function") {
+                return fn.apply(thisArg, fns.captures || null);
+            } else if (typeof fn === "string" && self.resource) {
+                self.resource[fn].apply(thisArg, fns.captures || null);
+            }
+        });
+    }
+};
+
+Router.prototype.traverse = function(method, path, routes, regexp) {
+    var fns = [], current, exact, match, next, that;
+    if (path === this.delimiter && routes[method]) {
+        next = [ [ routes.before, routes[method] ].filter(Boolean) ];
+        next.after = [ routes.after ].filter(Boolean);
+        next.matched = true;
+        next.captures = [];
+        return next;
+    }
+    for (var r in routes) {
+        if (routes.hasOwnProperty(r) && (!this._methods[r] || this._methods[r] && typeof routes[r] === "object" && !Array.isArray(routes[r]))) {
+            current = exact = regexp + this.delimiter + r;
+            if (!this.strict) {
+                exact += "[" + this.delimiter + "]?";
+            }
+            match = path.match(new RegExp("^" + exact));
+            if (!match) {
+                continue;
+            }
+            if (match[0] && match[0] == path && routes[r][method]) {
+                next = [ [ routes[r].before, routes[r][method] ].filter(Boolean) ];
+                next.after = [ routes[r].after ].filter(Boolean);
+                next.matched = true;
+                next.captures = match.slice(1);
+                if (this.recurse && routes === this.routes) {
+                    next.push([ routes["before"], routes["on"] ].filter(Boolean));
+                    next.after = next.after.concat([ routes["after"] ].filter(Boolean));
+                }
+                return next;
+            }
+            next = this.traverse(method, path, routes[r], current);
+            if (next.matched) {
+                if (next.length > 0) {
+                    fns = fns.concat(next);
+                }
+                if (this.recurse) {
+                    fns.push([ routes[r].before, routes[r].on ].filter(Boolean));
+                    next.after = next.after.concat([ routes[r].after ].filter(Boolean));
+                    if (routes === this.routes) {
+                        fns.push([ routes["before"], routes["on"] ].filter(Boolean));
+                        next.after = next.after.concat([ routes["after"] ].filter(Boolean));
+                    }
+                }
+                fns.matched = true;
+                fns.captures = next.captures;
+                fns.after = next.after;
+                return fns;
+            }
+        }
+    }
+    return false;
+};
+
+Router.prototype.insert = function(method, path, route, parent) {
+    var methodType, parentType, isArray, nested, part;
+    path = path.filter(function(p) {
+        return p && p.length > 0;
+    });
+    parent = parent || this.routes;
+    part = path.shift();
+    if (/\:|\*/.test(part) && !/\\d|\\w/.test(part)) {
+        part = regifyString(part, this.params);
+    }
+    if (path.length > 0) {
+        parent[part] = parent[part] || {};
+        return this.insert(method, path, route, parent[part]);
+    }
+    if (!part && !path.length && parent === this.routes) {
+        methodType = typeof parent[method];
+        switch (methodType) {
+          case "function":
+            parent[method] = [ parent[method], route ];
+            return;
+          case "object":
+            parent[method].push(route);
+            return;
+          case "undefined":
+            parent[method] = route;
+            return;
+        }
+        return;
+    }
+    parentType = typeof parent[part];
+    isArray = Array.isArray(parent[part]);
+    if (parent[part] && !isArray && parentType == "object") {
+        methodType = typeof parent[part][method];
+        switch (methodType) {
+          case "function":
+            parent[part][method] = [ parent[part][method], route ];
+            return;
+          case "object":
+            parent[part][method].push(route);
+            return;
+          case "undefined":
+            parent[part][method] = route;
+            return;
+        }
+    } else if (parentType == "undefined") {
+        nested = {};
+        nested[method] = route;
+        parent[part] = nested;
+        return;
+    }
+    throw new Error("Invalid route context: " + parentType);
+};
+
+
+
+Router.prototype.extend = function(methods) {
+    var self = this, len = methods.length, i;
+    for (i = 0; i < len; i++) {
+        (function(method) {
+            self._methods[method] = true;
+            self[method] = function() {
+                var extra = arguments.length === 1 ? [ method, "" ] : [ method ];
+                self.on.apply(self, extra.concat(Array.prototype.slice.call(arguments)));
+            };
+        })(methods[i]);
+    }
+};
+
+Router.prototype.runlist = function(fns) {
+    var runlist = this.every && this.every.before ? [ this.every.before ].concat(_flatten(fns)) : _flatten(fns);
+    if (this.every && this.every.on) {
+        runlist.push(this.every.on);
+    }
+    runlist.captures = fns.captures;
+    runlist.source = fns.source;
+    return runlist;
+};
+
+Router.prototype.mount = function(routes, path) {
+    if (!routes || typeof routes !== "object" || Array.isArray(routes)) {
+        return;
+    }
+    var self = this;
+    path = path || [];
+    function insertOrMount(route, local) {
+        var rename = route, parts = route.split(self.delimiter), routeType = typeof routes[route], isRoute = parts[0] === "" || !self._methods[parts[0]], event = isRoute ? "on" : rename;
+        if (isRoute) {
+            rename = rename.slice(self.delimiter.length);
+            parts.shift();
+        }
+        if (isRoute && routeType === "object" && !Array.isArray(routes[route])) {
+            local = local.concat(parts);
+            self.mount(routes[route], local);
+            return;
+        }
+        if (isRoute) {
+            local = local.concat(rename.split(self.delimiter));
+        }
+        self.insert(event, local, routes[route]);
+    }
+    for (var route in routes) {
+        if (routes.hasOwnProperty(route)) {
+            insertOrMount(route, path.slice(0));
+        }
+    }
+};
+
+
+
+}(window));
+
 var GitHub;
 var Owner;
 var Repo;
@@ -301,44 +893,47 @@ var __bind = function(fn, me) {
   return function(){ return fn.apply(me, arguments) }; 
 };
 
+function update_request_count (requests) {
+  if (requests.meta) {
+    $('span#request-counter').html(requests.meta['X-RateLimit-Remaining']);
+  };
+};
+
 function render(source, data) {
   var template = Handlebars.compile(source);
   return template(data);
 };
 
-function loading(section, callback) {
+function loading(callback) {
 
   $('img.lookycode-loading').remove();
   $('#user .inside').html("<div id='user-loading'></div>");
   
-  if (section != 'error') {
+  $('<img class="lookycode-loading" width="341px" height="104px" ' + 
+    'src="images/loading.png" />').css({
+    position: 'absolute',
+    display: 'block',
+    width: '341px',
+    opacity: 0,
+    height: '104px',
+    top: '350px',
+    'z-index': 99999,
+    left: $(window).width() / 2 - (341 / 2)
+  }).prependTo('body').animate({
+    opacity: 0.6
+  }, 500);
+  
+  $('#page').stop().css({
+    opacity: 1,
+    display: 'block'
+  }).animate({
+    opacity: 0.4,
+  }, 700, function() {
     
-    $('<img class="lookycode-loading" width="341px" height="104px" src="images/loading.png" />').css({
-      position: 'absolute',
-      display: 'block',
-      width: '341px',
-      opacity: 0,
-      height: '104px',
-      top: '350px',
-      'z-index': 99999,
-      left: $(window).width() / 2 - (341 / 2)
-    }).prependTo('body').animate({
-      opacity: 0.6
-    }, 500);
+    $('img.lookycode-loading').fadeOut('fast');
+    if (typeof callback == 'function') { callback(); };
     
-    $('#page').stop().css({
-      opacity: 1,
-      display: 'block'
-    }).animate({
-      opacity: 0.4,
-    }, 1000, function() {
-      
-      $('img.lookycode-loading').fadeOut('fast');
-      if (typeof callback == 'function') { callback(); };
-      
-    });
-    
-  };
+  });
   
 };
 
@@ -347,12 +942,17 @@ function buildChart(username, repos) {
   var data = { watchers: [], categories: [], forks: [], issues: []};
   
   if (repos.length < 2) {
-    var text = '<div id="no-data">This user does not have enough information to graph.</div>'
-    $('#page').prepend('<div id="user-metrics" style="width:960px;margin:auto;">' + text + '</div>');
+    var text = '<div id="no-data">This user does not have enough ' + 
+    'information to graph.</div>';
+
+    $('#page').prepend('<div id="user-metrics" ' + 
+    'style="width:960px;margin:auto;">' + text + '</div>');
+
     return false;
   };
   
-  $('#page').prepend('<div id="user-metrics" style="width:960px;margin:auto;"></div>');
+  $('#page').prepend('<div id="user-metrics" ' + 
+  'style="width:960px;margin:auto;"></div>');
   
   for (var i=0; i < repos.length; i++) {
     data.categories.push(repos[i].name)
@@ -539,24 +1139,24 @@ GitHub = (function() {
       repositories: {
         api: 'https://api.github.com/users/'+self.name+'/repos',
         https: 'https://github.com/' + self.name,
-        other: '/fetch/' + self.name
+        other: 'https://api.github.com/users/'+self.name+'/repos' // '/fetch/' + self.name
       },
       followers: {
         api: 'https://api.github.com/users/'+self.name+'/followers',
         https: 'https://github.com/'+self.name+'/followers'
       },
       following: {
-        api: 'https://github.com/users/'+self.name+'/following',
+        api: 'https://api.github.com/users/'+self.name+'/following',
         https: 'https://github.com/'+self.name+'/following'
       }
     };
     
-    self.fetchUser();
+    self.fetch_user();
   };
   
   GitHub.prototype = {
     
-    fetchUser: function() {
+    fetch_user: function() {
        var self = this;
        $.ajax({
          url: self.urls.profile.api,
@@ -564,8 +1164,17 @@ GitHub = (function() {
          contentType: "application/json; charset=utf-8",
          dataType: 'jsonp',
          success: function(json, textStatus, xhr) {
+           update_request_count(json);
+           
            self.user = json.data;
-           self.fetchRepos();
+           self.user.more = {};
+
+           self.user.more.followers = null;
+           self.user.more.repos = null;
+           self.user.more.following = null;
+           self.user.more.gists = null;
+           
+           self.fetch_repos();
          },
          error: function(xhr, textStatus, errorThrown) {
            self.userError();
@@ -573,44 +1182,20 @@ GitHub = (function() {
        });
      },
 
-     fetchRepos: function() {
+     fetch_repos: function() {
        var self = this;
        
        $.ajax({
          url: self.urls.repositories.other,
          type: 'GET',
          contentType: "application/json; charset=utf-8",
-         dataType: 'json',
+         dataType: 'jsonp',
          success: function(data, textStatus, xhr) {
-           var repos = JSON.parse(data);
-           $('#page').html("<ul id='repos' class='repos'></ul>");
-
-           var count = 1;
-           for (var i=0; i < repos.length; i++) {
-             if (count == 1) {
-               repos[i].klass = 'first'
-               self.addUserRepo(repos[i]);
-               count++
-             } else if (count == 2) {
-               repos[i].klass = 'middle'
-               self.addUserRepo(repos[i]);
-               count++
-             } else {
-               repos[i].klass = 'last'
-               self.addUserRepo(repos[i]);
-               count = 1;
-             };
-
-           };
-
-           if (self.user) {
-             self.user.repos = data.data;
-             self.addUserInformation();
-           } else {
-             self.userError();
-           };
+           update_request_count(data);
+           self.repos = data.data;
            
-           buildChart(self.name, repos);
+           //self.build_repos();
+           self.addUserInformation();
            
            if (self.callback) { self.callback(); };
          },
@@ -620,29 +1205,187 @@ GitHub = (function() {
        });
      },
 
-     followers: function(){
+     build_repos: function(){
+       var self = this;
+       $('#page').html("<ul id='repos' class='repos'></ul>");
+       updateURL(self.name + " - Repositories", self.name);
+
+       var count = 1;
+       for (var i=0; i < self.repos.length; i++) {
+         if (count == 1) {
+           self.repos[i].klass = 'first'
+           self.addUserRepo(self.repos[i]);
+           count++
+         } else if (count == 2) {
+           self.repos[i].klass = 'middle'
+           self.addUserRepo(self.repos[i]);
+           count++
+         } else {
+           self.repos[i].klass = 'last'
+           self.addUserRepo(self.repos[i]);
+           count = 1;
+         };
+
+       };
+       
+       if (self.user) {
+         self.user.repos = self.repos;
+         self.addUserInformation();
+       } else {
+         self.userError();
+       };
+       
+       buildChart(self.name, self.repos);
+     },
+
+     fetch_followers: function(){
       var self = this;
+
+      updateURL(self.name + " - Followers", self.name + "/followers");
+
+      var source = " \
+        <ul id='followers' class='image-box'> \
+        {{#more/followers}} \
+        <li> \
+        <a href='{{login}}' class='load-new-user' data-username='{{login}}'> \
+          <img width='80px' height='80px' src='{{avatar_url}}' /> \
+        </a> \
+        <div id='username'>{{truncate login 13 \"???\"}}</div> \
+        </li> \
+        {{/more/followers}} \
+        </ul>";
       
-      $.ajax({
-        url: self.urls.followers.api,
-        type: 'GET',
-        contentType: "application/json; charset=utf-8",
-        dataType: 'jsonp',
-        success: function(data, textStatus, xhr) {
-          self.followers = data.data;
-        },
-        error: function(xhr, textStatus, errorThrown) {
-          self.followers = [];
-          self.repoError();
-        }
-      });
+      if (self.user.more.followers == null) {
+        $.ajax({
+          url: self.urls.followers.api,
+          type: 'GET',
+          contentType: "application/json; charset=utf-8",
+          dataType: 'jsonp',
+          success: function(data, textStatus, xhr) {
+            update_request_count(data);
+            self.user.more.followers = data.data;
+            
+            if (data.meta.Link) {
+              $('#page').html(render(source, self.user));
+              
+              var count = parseInt(data.meta.Link[data.meta.Link.length - 1]
+              .toString().match(/page\=(\d+)/m)[1]) + 1;
+              
+              for (var i=2; i < count; i++) {
+                
+                self.fetch_more('https://api.github.com/users/' + 
+                self.user.login + '/followers?page=' + i, 'followers');
+
+              };
+              
+            } else {
+              $('#page').html(render(source, self.user));
+            };
+            
+          },
+          error: function(xhr, textStatus, errorThrown) {
+            self.user.more.followers = [];
+            self.repoError();
+          }
+        });
+        
+      } else {
+        $('#page').html(render(source, self.user));
+      };
+      
+     },
+
+     fetch_more: function(url, holder){
+       var self = this;
+       var source = " \
+       {{#users}} \
+       <li> \
+         <a href='{{login}}' class='load-new-user' data-username='{{login}}'> \
+           <img width='80px' height='80px' src='{{avatar_url}}' /> \
+         </a> \
+         <div id='username'>{{truncate login 13 \"???\"}}</div> \
+       </li> \
+       {{/users}}";
+         
+       $.ajax({
+         url: url,
+         type: 'GET',
+         dataType: 'jsonp',
+         success: function(data, textStatus, xhr) {
+           update_request_count(data);
+           
+           for (var i=0; i < data.data.length; i++) {
+             
+            if (holder == 'followers') {
+              self.user.more.followers.push(data.data[i]);
+            } else {
+              self.user.more.following.push(data.data[i]);
+            };
+            
+           };
+           
+           $('ul#' + holder).append(render(source, { users: data.data }));
+         }
+       });
+     },
+
+     fetch_following: function(){
+      var self = this;
+     
+      updateURL(self.name + " - Following", self.name + "/following");
+
+      var source = " \
+        <ul id='following' class='image-box'> \
+          {{#more/following}} \
+          <li> \
+            <a href='{{login}}' class='load-new-user' data-username='{{login}}'> \
+              <img width='80px' height='80px' src='{{avatar_url}}' /> \
+            </a> \
+            <div id='username'>{{truncate login 10 \"???\"}}</div> \
+          </li> \
+          {{/more/following}} \
+        </ul>";
+      
+      if (self.user.more.following == null) {
+        $.ajax({
+          url: self.urls.following.api,
+          type: 'GET',
+          contentType: "application/json; charset=utf-8",
+          dataType: 'jsonp',
+          success: function(data, textStatus, xhr) {
+            update_request_count(data);
+            self.user.more.following = data.data;
+            
+            if (data.meta.Link) {
+              $('#page').html(render(source, self.user));
+              var count = parseInt(data.meta.Link[data.meta.Link.length - 1].toString().match(/page\=(\d+)/m)[1]) + 1;
+              
+              for (var i=2; i < count; i++) {
+                self.fetch_more('https://api.github.com/users/'+self.user.login+'/following?page=' + i, 'following');
+              };
+              
+            } else {
+              $('#page').html(render(source, self.user));
+            };
+
+          },
+          error: function(xhr, textStatus, errorThrown) {
+            self.user.more.following = [];
+            self.repoError();
+          }
+        });
+        
+      } else {
+        $('#page').html(render(source, self.user));
+      };
       
      },
 
      userError: function() {
        var user = new Handlebars.SafeString(self.name).string;
        error({
-         message: '<s>We</s> You were unable to fetch this users github information.',
+         message: '<s>We</s> You were unable to fetch this users' + 
+          ' github information.',
          user: user
        });
      },
@@ -686,7 +1429,7 @@ GitHub = (function() {
              </div> \
            </div> \
          </li>";
-
+         
        $('#page ul#repos').append(render(source, repo));
      },
      
@@ -698,7 +1441,7 @@ GitHub = (function() {
            <div id='avatar'> \
              <img width='80' height='80' id='user-avatar-paper' src='{{avatar_url}}' /> \
            </div> \
-           <div id='name'>{{fullname}} <span class='username'>({{login}})</span></div> \
+           <div id='name'>{{fullname}} <span class='username' title='{{login}}'>({{truncate login 10 \"???\"}})</span></div> \
            <ul id='more'> \
              <li><div class='key'>Company</div> <div class='value'>{{nil company}}</div></li> \
              <li><div class='key'>Website</div> <div class='value'><a href='{{link blog}}'>{{nil blog}}</a></div></li> \
@@ -769,14 +1512,87 @@ Repo = (function() {
   return Repo;
 })();
 
+updateURL = function(title, route) {
+  if (history && history.pushState) {
+    history.pushState(null, title, "#/" + route);
+  } else {
+    document.title = title;
+    window.location.hash = "#/" + route;
+  };
+};
+
 jQuery(document).ready(function($) {
   
-  current_user = new GitHub(github_username);
+  if ((window.location.hash == "") || (window.location.pathname != "/")) {
+    updateURL("Mephux", "mephux");
+    current_user = new GitHub("mephux", function() {
+      current_user.build_repos();
+    });
+  };
+ 
+  $('#logo a').live('click', function() {
+    event.preventDefault();
+
+    updateURL("Mephux", "mephux");
+
+    if (current_user && (current_user.name === "mephux")) {
+      current_user.build_repos();
+    } else {
+      current_user = new GitHub("mephux", function() {
+        current_user.build_repos();
+      });
+    }
+  });
+
+  $('a.followers').live('click', function(event) {
+    event.preventDefault();
+    current_user.fetch_followers();
+  });
   
-  // $('a.followers').live('click', function(event) {
-  //   event.preventDefault();
-  //   current_user.followers();
-  // });
+  $('a.following').live('click', function(event) {
+    event.preventDefault();
+    current_user.fetch_following();
+  });
+  
+  $('a.repositories').live('click', function(event) {
+    event.preventDefault();
+    current_user.build_repos();
+  });
+  
+  $('a.load-new-user').live('click', function(event) {
+    event.preventDefault();
+    var username = $(this).data('username');
+    
+    $('img#user-avatar-paper').animate({
+      opacity: 0
+    }, 400);
+    
+    $.scrollTo('#header', 500);
+    
+    var image = $('img', this).clone().addClass('tmp-avatar').css({
+      display: 'block',
+      position: 'absolute',
+      'z-index': 99999,
+      overflow: 'hidden',
+    	border: '1px solid #383838',
+      top: $('img', this).offset().top,
+      left: $('img', this).offset().left
+    }).appendTo('body').animate({
+      top: $('img#user-avatar-paper').offset().top,
+      left: $('img#user-avatar-paper').offset().left
+    }, 400, function() {
+       current_user = new GitHub(username, function() {
+         $('title').html('Looky some code from ' + username);
+
+        updateURL(username, username);
+        current_user.build_repos();
+        
+        $('img.tmp-avatar').remove();
+     });
+     
+    });
+    
+  });
   
   $('form#find-user').submit(function(event) {
     event.preventDefault();
@@ -785,22 +1601,20 @@ jQuery(document).ready(function($) {
     
     if (username.length > 0) {
       
-      loading('user', function() {
-        
-        console.log('loading user')
+      loading(function() {
+
         current_user = new GitHub(username, function() {
           
           $('#page').animate({
             opacity: 1
-          }, 1000);
+          }, 500);
           
           $('title').html('Looky some code from ' + username);
 
-          if (history && history.pushState) {
-      			history.pushState(null, document.title, username);
-      		};
+          updateURL(document.title, username)
 
           $('input', self).blur();
+          $('input', self).val('');
           
         });
         
@@ -815,13 +1629,55 @@ jQuery(document).ready(function($) {
       opacity: 0
       }, 500, function() {
       $(this).remove();
-      $('#wrapper').fadeTo('fast', 1);
       
-      loading('error', function() {
-       current_user = new GitHub('mephux');
+      loading(function() {
+        current_user = new GitHub('mephux', function() {
+        $('#wrapper, #page').fadeTo('fast', 1);
+        });
       });
       
     });
   });
-  
+ 
+
+  // Router
+
+  route = function(type) {
+    if (type === "followers") {
+      current_user.fetch_followers();
+    } else if (type === "following") {
+      current_user.fetch_following();
+    } else if (type === "/") {
+      current_user.build_repos(); 
+    } else {
+    
+    };
+  };
+
+  var routes = {
+    '/:username': function(username) {
+      if (username === current_user.name) {
+        route("/");
+      } else {
+        current_user = new GitHub(username, function() {
+          current_user.build_repos();
+        });
+      };
+    },
+    '/:username/:type': function(username, type) {
+
+      if (username === current_user.name) {
+        route(type);
+      } else {
+        current_user = new GitHub(username, function() {
+          route(type);
+        });
+      };
+
+    }
+  };
+
+  var router = Router(routes); 
+  router.init();
+
 });

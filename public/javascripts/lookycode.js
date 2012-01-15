@@ -275,7 +275,7 @@ GitHub = (function() {
       repositories: {
         api: 'https://api.github.com/users/'+self.name+'/repos',
         https: 'https://github.com/' + self.name,
-        other: '/fetch/' + self.name
+        other: 'https://api.github.com/users/'+self.name+'/repos' // '/fetch/' + self.name
       },
       followers: {
         api: 'https://api.github.com/users/'+self.name+'/followers',
@@ -325,12 +325,13 @@ GitHub = (function() {
          url: self.urls.repositories.other,
          type: 'GET',
          contentType: "application/json; charset=utf-8",
-         dataType: 'json',
+         dataType: 'jsonp',
          success: function(data, textStatus, xhr) {
            update_request_count(data);
-           self.repos = JSON.parse(data);
+           self.repos = data.data;
            
-           self.build_repos();
+           //self.build_repos();
+           self.addUserInformation();
            
            if (self.callback) { self.callback(); };
          },
@@ -343,6 +344,7 @@ GitHub = (function() {
      build_repos: function(){
        var self = this;
        $('#page').html("<ul id='repos' class='repos'></ul>");
+       updateURL(self.name + " - Repositories", self.name);
 
        var count = 1;
        for (var i=0; i < self.repos.length; i++) {
@@ -374,7 +376,9 @@ GitHub = (function() {
 
      fetch_followers: function(){
       var self = this;
-      
+
+      updateURL(self.name + " - Followers", self.name + "/followers");
+
       var source = " \
         <ul id='followers' class='image-box'> \
         {{#more/followers}} \
@@ -463,7 +467,9 @@ GitHub = (function() {
 
      fetch_following: function(){
       var self = this;
-      
+     
+      updateURL(self.name + " - Following", self.name + "/following");
+
       var source = " \
         <ul id='following' class='image-box'> \
           {{#more/following}} \
@@ -642,10 +648,38 @@ Repo = (function() {
   return Repo;
 })();
 
+updateURL = function(title, route) {
+  if (history && history.pushState) {
+    history.pushState(null, title, "#/" + route);
+  } else {
+    document.title = title;
+    window.location.hash = "#/" + route;
+  };
+};
+
 jQuery(document).ready(function($) {
   
-  current_user = new GitHub(github_username);
-  
+  if ((window.location.hash == "") || (window.location.pathname != "/")) {
+    updateURL("Mephux", "mephux");
+    current_user = new GitHub("mephux", function() {
+      current_user.build_repos();
+    });
+  };
+ 
+  $('#logo a').live('click', function() {
+    event.preventDefault();
+
+    updateURL("Mephux", "mephux");
+
+    if (current_user && (current_user.name === "mephux")) {
+      current_user.build_repos();
+    } else {
+      current_user = new GitHub("mephux", function() {
+        current_user.build_repos();
+      });
+    }
+  });
+
   $('a.followers').live('click', function(event) {
     event.preventDefault();
     current_user.fetch_followers();
@@ -686,9 +720,8 @@ jQuery(document).ready(function($) {
        current_user = new GitHub(username, function() {
          $('title').html('Looky some code from ' + username);
 
-         if (history && history.pushState) {
-     			history.pushState(null, document.title, username);
-     		};
+        updateURL(username, username);
+        current_user.build_repos();
         
         $('img.tmp-avatar').remove();
      });
@@ -705,7 +738,7 @@ jQuery(document).ready(function($) {
     if (username.length > 0) {
       
       loading(function() {
-        
+
         current_user = new GitHub(username, function() {
           
           $('#page').animate({
@@ -714,11 +747,10 @@ jQuery(document).ready(function($) {
           
           $('title').html('Looky some code from ' + username);
 
-          if (history && history.pushState) {
-      			history.pushState(null, document.title, username);
-      		};
+          updateURL(document.title, username)
 
           $('input', self).blur();
+          $('input', self).val('');
           
         });
         
@@ -742,5 +774,46 @@ jQuery(document).ready(function($) {
       
     });
   });
-  
+ 
+
+  // Router
+
+  route = function(type) {
+    if (type === "followers") {
+      current_user.fetch_followers();
+    } else if (type === "following") {
+      current_user.fetch_following();
+    } else if (type === "/") {
+      current_user.build_repos(); 
+    } else {
+    
+    };
+  };
+
+  var routes = {
+    '/:username': function(username) {
+      if (username === current_user.name) {
+        route("/");
+      } else {
+        current_user = new GitHub(username, function() {
+          current_user.build_repos();
+        });
+      };
+    },
+    '/:username/:type': function(username, type) {
+
+      if (username === current_user.name) {
+        route(type);
+      } else {
+        current_user = new GitHub(username, function() {
+          route(type);
+        });
+      };
+
+    }
+  };
+
+  var router = Router(routes); 
+  router.init();
+
 });

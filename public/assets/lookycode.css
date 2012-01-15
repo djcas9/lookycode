@@ -1,7 +1,7 @@
 /* @group Main */
 
 html, body{
-	background-image: url(../images/bg.png?1307304399);
+	background-image: url(../images/bg.png?1312940300);
 	line-height: 1.4em;
 	font-family: "Helvetica Neue", Arial, Helvetica, Geneva, sans-serif;
 	margin: 0;
@@ -165,7 +165,7 @@ span.na{
 #wrapper #header .inside #logo{
 	width: 600px;
 	height: 200px;
-	background: url(../images/logo.png?1308457690) no-repeat;
+	background: url(../images/logo.png?1312940164) no-repeat;
 	display: block;
 	position: absolute;
 	top: 0;
@@ -561,13 +561,13 @@ s{
 	display: block;
 	position: absolute;
 	overflow: hidden;
-	top: 80px;
+	top: 100px;
 	right: 0;
 	bottom: 0;
 	left: 0;
 	margin: 0 auto auto;
 	border: 1px solid #000;
-	background: rgba(22,22,22,0.9) url(../images/error.png?1308461581) no-repeat center 30px;
+	background: rgba(22,22,22,0.9) url(../images/error.png?1312940305) no-repeat center 30px;
 }
 
 #error .error-message{
@@ -963,6 +963,70 @@ ul#repos li .inside div.repo-footer div.repo-box .box-title{
 	line-height: 35px;
 	background: rgba(23,23,23,0.7);
 	border-bottom: 1px solid #4d4d4d;
+}
+
+/* @end */
+
+/* @group Image List */
+
+ul.image-box{
+	position: relative;
+	display: block;
+	padding: 0;
+	list-style-type: none;
+	margin: 20px 0;
+	overflow: hidden;
+}
+
+ul.image-box li{
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+  	-webkit-box-shadow: inset 0px 1px 20px rgba(0,0,0,0.8);
+  	-moz-box-shadow: inset 0px 1px 20px rgba(0,0,0,0.8);
+  	box-shadow: inset 0px 1px 20px rgba(0,0,0,0.8);
+	width:  90px;
+	float: left;
+	display: block;
+	position: relative;
+	
+	background: #373637;
+	
+	border: 1px solid #4a4a4a;
+	padding: 5px;
+	margin: 9px 9px 10px;
+	height: 110px;
+}
+
+ul.image-box li #username{
+	vertical-align: middle;
+	display: block;
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	height: 30px;
+	line-height: 30px;
+	text-align: center;
+	font-weight: normal;
+	text-decoration: none;
+	font-variant: normal;
+	color: #fff;
+	text-shadow: #000 0 1px 0;
+	font-size: 0.8em;
+	font-style: normal;
+}
+
+ul.image-box img{
+  	-webkit-box-shadow: 0px 1px 20px rgba(0,0,0,0.8);
+  	-moz-box-shadow: 0px 1px 20px rgba(0,0,0,0.8);
+  	box-shadow: 0px 1px 20px rgba(0,0,0,0.8);
+	position: relative;
+	overflow: hidden;
+	display: block;
+	margin-top: 4px;
+	border: 1px solid #555;
+	margin-left: 4px;
 }
 
 /* @end */
