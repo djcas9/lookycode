@@ -1615,6 +1615,8 @@ jQuery(document).ready(function($) {
 
           $('input', self).blur();
           $('input', self).val('');
+
+          current_user.build_repos();
           
         });
         
