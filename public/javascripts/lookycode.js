@@ -347,6 +347,7 @@ GitHub = (function() {
        updateURL(self.name + " - Repositories", self.name);
 
        var count = 1;
+
        for (var i=0; i < self.repos.length; i++) {
          if (count == 1) {
            self.repos[i].klass = 'first'
@@ -660,9 +661,10 @@ updateURL = function(title, route) {
 jQuery(document).ready(function($) {
   
   if ((window.location.hash == "") || (window.location.pathname != "/")) {
-    updateURL("Mephux", "mephux");
     current_user = new GitHub("mephux", function() {
-      current_user.build_repos();
+      
+      if (current_user) { current_user.build_repos() };
+      updateURL("Mephux", "mephux");
     });
   };
  
@@ -690,7 +692,7 @@ jQuery(document).ready(function($) {
     current_user.fetch_following();
   });
   
-  $('a.repositories').live('click', function(event) {
+  $('img#user-avatar-paper, a.repositories').live('click', function(event) {
     event.preventDefault();
     current_user.build_repos();
   });
@@ -817,5 +819,4 @@ jQuery(document).ready(function($) {
 
   var router = Router(routes); 
   router.init();
-
 });

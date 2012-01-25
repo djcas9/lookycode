@@ -321,6 +321,7 @@ span.username{
 }
 
 #wrapper #user .inside #user-information #avatar img{
+  cursor: pointer;
 	overflow: hidden;
 	position: relative;
 	display: block;

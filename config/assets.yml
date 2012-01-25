@@ -10,6 +10,7 @@ javascripts:
     - public/javascripts/jquery.js
     - public/javascripts/highcharts.js
     - public/javascripts/director.js
+    - public/javascripts/scrollto.js
     - public/javascripts/lookycode.js
 stylesheets:
   lookycode:
