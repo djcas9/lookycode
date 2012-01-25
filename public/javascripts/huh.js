@@ -4,6 +4,8 @@ soundManager.url = '../swf/';
 soundManager.flashVersion = 9;
 soundManager.useFlashBlock = false;
 
+var song = null;
+
 Grid = function() {
   
   function Grid (options) {
@@ -210,7 +212,7 @@ jQuery(document).ready(function($) {
 
   soundManager.onready(function() {
 
-    var song = soundManager.createSound({
+     song = soundManager.createSound({
       id: "HIPSTER",
       url: 'http://www.lookycode.com/crazyshit.ogg',
       autoLoad: true,
@@ -227,12 +229,12 @@ jQuery(document).ready(function($) {
           grid.build();
         }, 300);
       },
-      onfinish: function() {
+      onLoad: function() {
         var grid = new Grid({
           container: '.wrapper',
-          columns: 8,
-          rows: 8
-        });      
+          columns: 10,
+          rows: 10
+        });
       }
     });
 
